@@ -3,297 +3,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Три в ряд - Многоуровневая игра</title>
+    <title>Emoji Match Game</title>
     <style>
-        /* Основные стили */
         body {
             font-family: Arial, sans-serif;
             background-color: #f0f0f0;
+            text-align: center;
             margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            padding: 0;
         }
-        .menu, .level-board, .game-board, .shop {
+        h1 {
             margin-top: 20px;
-            display: none;
+            color: #333;
         }
-        .menu {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .menu h1, .game-board h1 {
-            font-size: 32px;
-        }
-        .levels {
+        .game-container {
+            margin: 20px auto;
             display: grid;
-            grid-template-columns: repeat(5, 50px);
-            gap: 10px;
-            margin-top: 20px;
-        }
-        .level {
-            width: 50px;
-            height: 50px;
-            background-color: #fff;
-            border: 1px solid #ccc;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 18px;
-            cursor: pointer;
-        }
-        .locked {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-        .shop-button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 18px;
-            background-color: #008CBA;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .game-board {
-            display: grid;
-            grid-template-columns: repeat(8, 50px);
+            grid-template-columns: repeat(6, 50px);
+            grid-template-rows: repeat(6, 50px);
             gap: 5px;
-            margin-top: 20px;
+            width: fit-content;
         }
         .cell {
             width: 50px;
             height: 50px;
-            background-color: #fff;
-            border: 1px solid #ddd;
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background-color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .cell:hover {
+            transform: scale(1.1);
+        }
+        .buttons {
+            margin: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .level-button {
+            padding: 10px;
+            font-size: 16px;
+            margin: 5px;
+            width: 60px;
+        }
+        .disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .shop, .reset, .stars {
             font-size: 24px;
         }
-        .status {
-            margin-top: 10px;
-            font-size: 18px;
-        }
-        .shop, .shop-button {
-            display: block;
-        }
-        .shop {
-            background-color: #fff;
-            padding: 20px;
-            border: 1px solid #ccc;
-            text-align: center;
-        }
-        .shop button {
-            margin: 5px;
-            padding: 10px 20px;
-            cursor: pointer;
+        .hidden {
+            visibility: hidden;
         }
     </style>
 </head>
 <body>
 
-    <div class="menu">
-        <h1>Выберите уровень</h1>
-        <div class="levels" id="levels">
-            <!-- Уровни будут генерироваться динамически -->
-        </div>
-        <button class="shop-button" onclick="openShop()">🛍️ Магазин</button>
+    <h1>Emoji Match Game</h1>
+
+    <div class="buttons">
+        <button onclick="startGame()">Start Game</button>
+        <button onclick="pauseGame()">Pause</button>
+        <button onclick="undoMove()">Undo</button>
     </div>
 
-    <div class="game-board" id="game-board">
-        <h1>Игра</h1>
-        <div class="status">
-            <p>Осталось ходов: <span id="moves-left"></span></p>
-            <p>Задание: Собрать <span id="task-item"></span> x <span id="task-count"></span></p>
-        </div>
-        <div id="board" class="game-board">
-            <!-- Игровое поле будет генерироваться динамически -->
-        </div>
-        <button class="shop-button" onclick="retryLevel()">🔃 Пройти заново</button>
+    <div class="game-container" id="game-container">
+        <!-- Игровое поле будет генерироваться здесь -->
     </div>
 
-    <div class="shop" id="shop">
-        <h2>🛍️ Магазин</h2>
-        <p>Ваши монеты: <span id="coins">0</span> 🌕</p>
-        <button onclick="buyItem('bomb')">Купить Бомбу 💣 - 40 монет</button>
-        <button onclick="buyItem('move')">Купить ход ➕ - 1 монета</button>
-        <button onclick="closeShop()">Закрыть магазин</button>
+    <div class="buttons">
+        <button class="shop" onclick="openShop()">🛍️ Shop</button>
+        <button class="reset" onclick="restartLevel()">🔃 Restart</button>
+    </div>
+
+    <h2>Level Select</h2>
+    <div id="level-select">
+        <!-- Кнопки уровней -->
+        <button class="level-button" onclick="selectLevel(1)">Level 1</button>
+        <button class="level-button disabled" onclick="selectLevel(2)">Level 2</button>
+        <button class="level-button disabled" onclick="selectLevel(3)">Level 3</button>
+        <!-- Добавить больше уровней по мере прохождения -->
+    </div>
+
+    <div class="status">
+        <div>Stars: <span id="stars">🌟🌟🌟</span></div>
+        <div>Coins: <span id="coins">🌕 0</span></div>
     </div>
 
     <script>
-        // Смайлики для игрового поля
-        const objects = [
-            '⭐', '✨', '💦', '🔥', '🎉', '❤️', '🧡', '💛', '💚', '🩵', '💙', 
-            '💜', '🤎', '🖤', '🩶', '💅', '🌹', '🌸', '🌱', '🌳', '🍀', '🌲', 
-            '⛄', '☃️', '🌝', '🌚', '🌕', '🐱', '🐯', '🦁', '🦄', '🐸', '🐘', 
-            '🐣', '🐟', '🐠', '🐡', '🪼', '🐞', '🐝', '🍓', '🍒', '🍎', '🍉', 
-            '🍌', '🍍', '🍇', '🍔', '🥨', '🍟', '🍕', '🥗', '🍭', '🍬', '🍫', 
-            '🍪', '🍯', '🥤', '🎀', '🎁', '🎈', '🎊', '🎉', '🧨', '⚽', '🏀', 
-            '🧶', '📀', '💿', '💸', '👠', '⚜️', '🔱', '☢️', '☣️', '💣'  // Бомба 💣
-        ];
-
-        let levels = [];
+        const emojis = ["⭐", "✨", "💦", "🔥", "🎉", "❤️", "🧡", "💛", "💚", "🩵", "💙", "💜", "🤎", "🖤", "🩶", "💅", "🌹", "🌸", "🌱", "🌳", "🍀", "🌲", "⛄", "☃️", "🌝", "🌚", "🌕", "🐱", "🐯", "🦁", "🦄", "🐸", "🐘", "🐣", "🐟", "🐠", "🐡", "🪼", "🐞", "🐝", "🍓", "🍒", "🍎", "🍉", "🍌", "🍍", "🍇", "🍔", "🥨", "🍟", "🍕", "🥗", "🍭", "🍬", "🍫", "🍪", "🍯", "🥤", "🎀", "🎁", "🎈", "🎊", "🎉", "🧨", "⚽", "🏀", "🧶", "📀", "💿", "💸", "👠", "⚜️", "🔱", "☢️", "☣️"];
+        let gameBoard = [];
+        let selectedLevel = 1;
+        let moves = [];
         let coins = 0;
-        let currentLevelIndex = 0;
-        let movesLeft = 0;
-        let taskCount = 0;
-        let board = [];
+        let stars = 3;
+        let maxMoves = 15;
+        let currentMoves = 0;
+        let selectedCells = [];
 
-        function generateLevels() {
-            for (let i = 1; i <= 10; i++) {
-                const randomItem = objects[Math.floor(Math.random() * objects.length)];
-                const randomCount = Math.floor(Math.random() * 6) + 3;  // Задача на сбор от 3 до 8 предметов
-                const maxMoves = randomCount * 2 + 5;  // Количество ходов зависит от сложности задачи
-                levels.push({
-                    level: i,
-                    task: { item: randomItem, count: randomCount },
-                    maxMoves: maxMoves,
-                    completed: false,
-                    stars: 0
-                });
+        function generateGameBoard() {
+            const container = document.getElementById("game-container");
+            container.innerHTML = '';
+            gameBoard = [];
+
+            for (let i = 0; i < 36; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+                cell.innerText = emoji;
+                cell.dataset.index = i;
+                cell.addEventListener('click', () => selectCell(i));
+                container.appendChild(cell);
+                gameBoard.push(emoji);
             }
         }
 
-        function initializeMenu() {
-            const levelsElement = document.getElementById('levels');
-            levelsElement.innerHTML = '';
-            levels.forEach((level, index) => {
-                const levelElement = document.createElement('div');
-                levelElement.className = 'level';
-                if (level.completed || index === 0 || levels[index - 1].completed) {
-                    levelElement.textContent = `${level.level} 🌟${level.stars}`;
-                    levelElement.addEventListener('click', () => startLevel(index));
-                } else {
-                    levelElement.textContent = `${level.level}`;
-                    levelElement.className += ' locked';
-                }
-                levelsElement.appendChild(levelElement);
-            });
+        function startGame() {
+            currentMoves = 0;
+            generateGameBoard();
+            updateStatus();
         }
 
-        function startLevel(index) {
-            currentLevelIndex = index;
-            movesLeft = levels[index].maxMoves;
-            taskCount = levels[index].task.count;
-            document.getElementById('moves-left').textContent = movesLeft;
-            document.getElementById('task-item').textContent = levels[index].task.item;
-            document.getElementById('task-count').textContent = taskCount;
+        function pauseGame() {
+            // Pause the game logic
+            alert("Game paused.");
+        }
 
-            board = generateBoard(8);
+        function undoMove() {
+            if (moves.length > 0) {
+                const lastMove = moves.pop();
+                gameBoard[lastMove.index] = lastMove.emoji;
+                renderBoard();
+                currentMoves--;
+                updateStatus();
+            }
+        }
+
+        function selectLevel(level) {
+            if (level > selectedLevel) return; // Нельзя перепрыгивать уровни
+            selectedLevel = level;
+            startGame();
+        }
+
+        function selectCell(index) {
+            if (selectedCells.length === 0) {
+                selectedCells.push(index);
+            } else if (selectedCells.length === 1) {
+                if (Math.abs(selectedCells[0] - index) === 1 || Math.abs(selectedCells[0] - index) === 6) {
+                    swapCells(selectedCells[0], index);
+                    selectedCells = [];
+                }
+            }
+        }
+
+        function swapCells(index1, index2) {
+            const temp = gameBoard[index1];
+            gameBoard[index1] = gameBoard[index2];
+            gameBoard[index2] = temp;
+
+            currentMoves++;
+            moves.push({index: index1, emoji: temp});
+
             renderBoard();
-
-            document.querySelector('.menu').style.display = 'none';
-            document.querySelector('.game-board').style.display = 'block';
+            checkMatches();
+            updateStatus();
         }
 
-        function generateBoard(size) {
-            const board = [];
+        function checkMatches() {
+            // Логика проверки совпадений и удаления их с поля
+            // Если совпадения есть - удаляем их, добавляем очки и монеты, заполняем поле новыми объектами
+        }
 
-            for (let i = 0; i < size; i++) {
-                const row = [];
+        function bombAction(index) {
+            // Логика действия бомбы
+            const bombArea = getBombArea(index);
+            bombArea.forEach(i => {
+                gameBoard[i] = emojis[Math.floor(Math.random() * emojis.length)];
+            });
+            renderBoard();
+        }
 
-                for (let j = 0; j < size; j++) {
-                    let newItem = objects[Math.floor(Math.random() * objects.length)];
-
-                    // Проверка, чтобы не было совпадений сразу при генерации
-                    if (j >= 2 && row[j - 1] === row[j - 2] && row[j - 1] === newItem) {
-                        // Если предыдущие два элемента одинаковы, выбираем другой элемент
-                        newItem = objects.filter(item => item !== row[j - 1])[Math.floor(Math.random() * (objects.length - 1))];
-                    } else if (i >= 2 && board[i - 1][j] === board[i - 2][j] && board[i - 1][j] === newItem) {
-                        // Если два элемента по вертикали одинаковы, выбираем другой элемент
-                        newItem = objects.filter(item => item !== board[i - 1][j])[Math.floor(Math.length - 1))];
-                    }
-
-                    row.push(newItem);
-                }
-
-                board.push(row);
-            }
-
-            // Добавляем комбинации 2 или 3 объектов рядом
-            for (let i = 0; i < size; i++) {
-                for (let j = 0; j < size - 2; j++) {
-                    if (Math.random() < 0.3) {  // 30% шанс на создание комбинации
-                        let patternType = Math.random();
-                        
-                        if (patternType < 0.5) {  // 50% шанс на пару объектов
-                            board[i][j] = board[i][j + 1] = objects[Math.floor(Math.random() * objects.length)];
-                        } else {  // 50% шанс на 3 объекта, с одним объектом между ними
-                            board[i][j] = board[i][j + 2] = objects[Math.floor(Math.random() * objects.length)];
-                        }
+        function getBombArea(index) {
+            // Получение области 4x4 вокруг бомбы
+            let area = [];
+            for (let i = -2; i <= 2; i++) {
+                for (let j = -2; j <= 2; j++) {
+                    const targetIndex = index + i + j * 6;
+                    if (targetIndex >= 0 && targetIndex < 36) {
+                        area.push(targetIndex);
                     }
                 }
             }
-
-            return board;
+            return area;
         }
 
         function renderBoard() {
-            const boardElement = document.getElementById('board');
-            boardElement.innerHTML = '';
-
-            board.forEach(row => {
-                row.forEach(cell => {
-                    const cellElement = document.createElement('div');
-                    cellElement.className = 'cell';
-                    cellElement.textContent = cell;
-                    cellElement.onclick = () => handleCellClick(cell);
-                    boardElement.appendChild(cellElement);
-                });
+            const container = document.getElementById("game-container");
+            container.childNodes.forEach((cell, index) => {
+                cell.innerText = gameBoard[index];
             });
         }
 
-        function handleCellClick(cell) {
-            // Логика для обработки нажатия на ячейку
-            // Эта функция может быть расширена для обработки перемещения и проверки совпадений
-            console.log('Cell clicked:', cell);
-        }
-
-        function retryLevel() {
-            startLevel(currentLevelIndex);
+        function updateStatus() {
+            document.getElementById("coins").innerText = `🌕 ${coins}`;
+            document.getElementById("stars").innerText = stars >= 3 ? '🌟🌟🌟' : stars === 2 ? '🌟🌟' : '🌟';
         }
 
         function openShop() {
-            document.querySelector('.menu').style.display = 'none';
-            document.querySelector('.game-board').style.display = 'none';
-            document.querySelector('.shop').style.display = 'block';
+            alert("Welcome to the shop! You can buy bombs or extra moves.");
+            // Логика покупки в магазине
         }
 
-        function closeShop() {
-            document.querySelector('.shop').style.display = 'none';
-            document.querySelector('.menu').style.display = 'block';
+        function restartLevel() {
+            startGame();
         }
 
-        function buyItem(item) {
-            if (item === 'bomb') {
-                if (coins >= 40) {
-                    coins -= 40;
-                    document.getElementById('coins').textContent = coins;
-                    // Логика для покупки бомбы
-                    console.log('Bought bomb');
-                } else {
-                    alert('Не хватает монет!');
-                }
-            } else if (item === 'move') {
-                if (coins >= 1) {
-                    coins -= 1;
-                    document.getElementById('coins').textContent = coins;
-                    movesLeft += 1;
-                    document.getElementById('moves-left').textContent = movesLeft;
-                    // Логика для добавления хода
-                    console.log('Bought move');
-                } else {
-                    alert('Не хватает монет!');
-                }
-            }
-        }
-
-        // Инициализация игры и меню
-        generateLevels();
-        initializeMenu();
+        // Дополнительная логика для расчета ходов, уровней, и т.д.
     </script>
 
 </body>
