@@ -140,7 +140,7 @@
     </div>
 
     <div id="task-panel" class="hidden">
-        <h2>Task: Collect 3 🍓</h2>
+        <h2 id="task">Task: Collect 3 🍓</h2>
     </div>
 
     <div id="game-board"></div>
@@ -177,6 +177,15 @@
         let currentLevel = 1;
         let coins = 0;
         let steps = 20;
+        let firstTile = null;
+
+        const tasks = [
+            {emoji: '🍓', count: 3},
+            {emoji: '🍒', count: 5},
+            {emoji: '💦', count: 4},
+            {emoji: '🔥', count: 6},
+            {emoji: '⭐', count: 3}
+        ];
 
         function startGame() {
             document.getElementById('menu').classList.add('hidden');
@@ -184,6 +193,7 @@
             document.getElementById('controls').classList.remove('hidden');
             document.getElementById('task-panel').classList.remove('hidden');
             generateBoard();
+            updateTask();
         }
 
         function generateBoard() {
@@ -198,23 +208,126 @@
                 gameBoard.appendChild(tile);
                 boardTiles.push(tile);
             }
-            detectMatches(boardTiles);
+            gameBoard.querySelectorAll('.tile').forEach(tile => tile.addEventListener('click', handleTileClick));
         }
 
-        function detectMatches(boardTiles) {
-            // Implement logic to detect initial matches
-        }
-
-        function checkMatch() {
-            // Implement logic for checking matches after a move
+        function updateTask() {
+            const task = tasks[currentLevel - 1];
+            document.getElementById('task').textContent = `Task: Collect ${task.count} ${task.emoji}`;
         }
 
         function handleTileClick(event) {
-            // Implement logic for swapping tiles and checking for matches
+            const clickedTile = event.target;
+            if (!firstTile) {
+                firstTile = clickedTile;
+                firstTile.classList.add('selected');
+            } else {
+                const secondTile = clickedTile;
+                if (areAdjacent(firstTile, secondTile)) {
+                    swapTiles(firstTile, secondTile);
+                    firstTile.classList.remove('selected');
+                    firstTile = null;
+                    checkMatch();
+                    updateSteps(1);
+                } else {
+                    firstTile.classList.remove('selected');
+                    firstTile = clickedTile;
+                    firstTile.classList.add('selected');
+                }
+            }
         }
 
-        function createBomb() {
-            // Implement bomb creation and explosion logic
+        function areAdjacent(tile1, tile2) {
+            const tiles = Array.from(gameBoard.children);
+            const index1 = tiles.indexOf(tile1);
+            const index2 = tiles.indexOf(tile2);
+            const diff = Math.abs(index1 - index2);
+
+            return diff === 1 || diff === 8 || diff === 7 || diff === 9; // включение диагоналей
+        }
+
+        function swapTiles(tile1, tile2) {
+            const tempEmoji = tile1.getAttribute('data-emoji');
+            tile1.setAttribute('data-emoji', tile2.getAttribute('data-emoji'));
+            tile1.textContent = tile2.textContent;
+            tile2.setAttribute('data-emoji', tempEmoji);
+            tile2.textContent = tempEmoji;
+        }
+
+        function checkMatch() {
+            const tiles = Array.from(gameBoard.children);
+
+            for (let i = 0; i < tiles.length; i++) {
+                const emoji = tiles[i].getAttribute('data-emoji');
+                if (i % 8 < 6 && checkLine(tiles[i], tiles[i + 1], tiles[i + 2])) {
+                    removeTiles(tiles[i], tiles[i + 1], tiles[i + 2]);
+                }
+                if (i < 48 && checkLine(tiles[i], tiles[i + 8], tiles[i + 16])) {
+                    removeTiles(tiles[i], tiles[i + 8], tiles[i + 16]);
+                }
+            }
+        }
+
+        function checkLine(tile1, tile2, tile3) {
+            return tile1.getAttribute('data-emoji') === tile2.getAttribute('data-emoji') &&
+                   tile2.getAttribute('data-emoji') === tile3.getAttribute('data-emoji');
+        }
+
+        function removeTiles(tile1, tile2, tile3) {
+            tile1.textContent = '';
+            tile2.textContent = '';
+            tile3.textContent = '';
+            const task = tasks[currentLevel - 1];
+            const removedEmoji = tile1.getAttribute('data-emoji');
+
+            if (removedEmoji === task.emoji) {
+                task.count -= 3;
+                if (task.count <= 0) {
+                    alert('Level Completed!');
+                    advanceToNextLevel();
+                }
+            }
+
+            refillBoard();
+        }
+
+        function refillBoard() {
+            const tiles = Array.from(gameBoard.children);
+            tiles.forEach(tile => {
+                if (tile.textContent === '') {
+                    let newEmoji = tiles[Math.floor(Math.random() * tiles.length)];
+                    tile.textContent = newEmoji;
+                    tile.setAttribute('data-emoji', newEmoji);
+                }
+            });
+        }
+
+        function updateSteps(value) {
+            steps -= value;
+            document.getElementById('steps-count').textContent = `Steps left: ${steps}`;
+            if (steps <= 0) {
+                alert('Out of moves! Level failed.');
+                restartLevel();
+            }
+        }
+
+        function advanceToNextLevel() {
+            currentLevel++;
+            coins += 10;
+            updateCoins(0);
+            if (currentLevel <= tasks.length) {
+                alert(`Proceeding to Level ${currentLevel}`);
+                generateBoard();
+                updateTask();
+            } else {
+                alert('You have completed all levels!');
+            }
+        }
+
+        function restartLevel() {
+            steps = 20;
+            generateBoard();
+            updateTask();
         }
 
         function updateCoins(amount) {
@@ -222,17 +335,16 @@
             document.getElementById('coin-count').textContent = `Coins: ${coins} 🌕`;
         }
 
-        function updateSteps(amount) {
-            steps -= amount;
-            document.getElementById('steps-count').textContent = `Steps left: ${steps}`;
-        }
-
         document.getElementById('start-game').addEventListener('click', startGame);
-        document.getElementById('pause-button').addEventListener('click', () => alert("Game Paused"));
-        document.getElementById('restart-button').addEventListener('click', startGame);
-        document.getElementById('undo-button').addEventListener('click', () => alert("Undo Last Move"));
+
+        document.getElementById('pause-button').addEventListener('click', () => alert('Game Paused'));
+
+        document.getElementById('restart-button').addEventListener('click', restartLevel);
+
+        document.getElementById('undo-button').addEventListener('click', () => alert('Undo Last Move'));
+
         document.getElementById('shop-button').addEventListener('click', () => {
-            document.getElementById('shop').classList.toggle('hidden');
+            document.getElementById('shop').style.display = 'block';
         });
 
         document.querySelectorAll('.buy-item').forEach(button => {
@@ -240,19 +352,29 @@
                 const item = event.target.getAttribute('data-item');
                 if (item === 'bomb' && coins >= 40) {
                     updateCoins(-40);
-                    alert("Bought a Bomb 💣");
+                    alert('Bought a Bomb 💣');
                 } else if (item === 'move' && coins >= 1) {
                     updateCoins(-1);
                     updateSteps(-1);
-                    alert("Bought 1 Move");
+                    alert('Bought 1 Move');
                 } else {
-                    alert("Not enough coins!");
+                    alert('Not enough coins!');
                 }
             });
         });
 
-        // Add event listeners for tile click events
-        gameBoard.addEventListener('click', handleTileClick);
+        document.querySelectorAll('.level').forEach(level => {
+            level.addEventListener('click', () => {
+                const selectedLevel = parseInt(level.getAttribute('data-level'));
+                if (selectedLevel <= currentLevel) {
+                    currentLevel = selectedLevel;
+                    restartLevel();
+                } else {
+                    alert('Complete the previous level first!');
+                }
+            });
+        });
+
     </script>
 
 </body>
