@@ -3,203 +3,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emoji Match Game</title>
+    <title>Match 3 Game</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
             text-align: center;
+            background-color: #f0f0f0;
             margin: 0;
             padding: 0;
         }
         h1 {
             margin-top: 20px;
-            color: #333;
         }
-        .game-container {
-            margin: 20px auto;
+        #game-board {
             display: grid;
-            grid-template-columns: repeat(8, 50px);
-            grid-template-rows: repeat(8, 50px);
+            grid-template-columns: repeat(8, 60px);
+            grid-template-rows: repeat(8, 60px);
             gap: 5px;
-            width: fit-content;
+            justify-content: center;
+            margin: 20px auto;
+            visibility: hidden;
         }
-        .cell {
-            width: 50px;
-            height: 50px;
+        .tile {
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            text-align: center;
+            line-height: 60px;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+            cursor: pointer;
+            user-select: none;
+        }
+        .bomb {
+            background-color: red;
+            color: white;
+        }
+        #menu {
+            margin: 20px;
+        }
+        #level-select {
+            display: grid;
+            grid-template-columns: repeat(5, 80px);
+            grid-template-rows: auto;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px auto;
+        }
+        .level {
+            width: 80px;
+            height: 80px;
+            line-height: 80px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
-            background-color: white;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: transform 0.2s;
+            position: relative;
         }
-        .cell:hover {
-            transform: scale(1.1);
+        .level.completed {
+            background-color: #b3ffb3;
         }
-        .buttons {
-            margin: 20px;
+        .level-stars {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            font-size: 16px;
         }
-        button {
+        #controls {
+            margin-top: 20px;
+        }
+        .control-button {
             padding: 10px 20px;
             margin: 5px;
             font-size: 16px;
             cursor: pointer;
         }
-        .bomb {
-            color: red;
+        #task-panel {
+            margin: 20px;
+        }
+        #shop {
+            display: none;
+            text-align: left;
+            margin: 20px auto;
+            width: 300px;
+        }
+        #shop-items {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .shop-item {
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        .shop-item span {
+            display: block;
+            font-size: 18px;
+        }
+        #pause-button, #restart-button, #undo-button, #shop-button {
+            display: inline-block;
+            margin: 10px;
+        }
+        #coin-count {
+            margin: 20px;
+            font-size: 20px;
+        }
+        #steps-count {
+            margin: 20px;
+            font-size: 20px;
         }
     </style>
 </head>
 <body>
 
-    <h1>Emoji Match Game</h1>
-
-    <div class="buttons">
-        <button onclick="startGame()">Start Game</button>
-        <button onclick="pauseGame()">Pause</button>
-        <button onclick="undoMove()">Undo</button>
+    <h1>Match 3 Game</h1>
+    
+    <div id="menu">
+        <button class="control-button" id="start-game">Start Game</button>
     </div>
 
-    <div class="game-container" id="game-container">
-        <!-- Игровое поле будет генерироваться здесь -->
+    <div id="level-select">
+        <div class="level" data-level="1">Level 1</div>
+        <div class="level" data-level="2">Level 2</div>
+        <div class="level" data-level="3">Level 3</div>
+        <div class="level" data-level="4">Level 4</div>
+        <div class="level" data-level="5">Level 5</div>
+    </div>
+
+    <div id="task-panel" class="hidden">
+        <h2>Task: Collect 3 🍓</h2>
+    </div>
+
+    <div id="game-board"></div>
+
+    <div id="controls" class="hidden">
+        <button id="pause-button">Pause</button>
+        <button id="restart-button">🔃 Restart Level</button>
+        <button id="undo-button">Undo Move</button>
+        <button id="shop-button">🛍️ Shop</button>
+    </div>
+
+    <div id="coin-count">Coins: 0 🌕</div>
+    <div id="steps-count">Steps left: 20</div>
+
+    <div id="shop">
+        <h2>🛍️ Shop</h2>
+        <div id="shop-items">
+            <div class="shop-item">
+                <span>💣 Bomb</span>
+                <span>40 Coins</span>
+                <button class="control-button buy-item" data-item="bomb">Buy</button>
+            </div>
+            <div class="shop-item">
+                <span>+1 Move</span>
+                <span>1 Coin</span>
+                <button class="control-button buy-item" data-item="move">Buy</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        const emojis = ["⭐", "✨", "💦", "🔥", "🎉", "❤️", "🧡", "💛", "💚", "💙", "💜", "🍓", "🍒", "🍎"];
-        let gameBoard = [];
-        let selectedCells = [];
-        let moves = [];
-
-        function generateGameBoard() {
-            const container = document.getElementById("game-container");
-            container.innerHTML = '';
-            gameBoard = [];
-
-            for (let i = 0; i < 64; i++) { // 8x8 поле
-                const cell = document.createElement('div');
-                cell.classList.add('cell');
-                const emoji = emojis[Math.floor(Math.random() * emojis.length)];
-                cell.innerText = emoji;
-                cell.dataset.index = i;
-                cell.addEventListener('click', () => selectCell(i));
-                container.appendChild(cell);
-                gameBoard.push(emoji);
-            }
-        }
+        const tiles = ['⭐', '✨', '💦', '🔥', '🎉', '❤️', '🍓', '🍒']; // Add more emoji as needed
+        let gameBoard = document.getElementById('game-board');
+        let currentLevel = 1;
+        let coins = 0;
+        let steps = 20;
 
         function startGame() {
-            generateGameBoard();
+            document.getElementById('menu').classList.add('hidden');
+            document.getElementById('game-board').style.visibility = 'visible';
+            document.getElementById('controls').classList.remove('hidden');
+            document.getElementById('task-panel').classList.remove('hidden');
+            generateBoard();
         }
 
-        function pauseGame() {
-            alert("Game paused.");
-        }
-
-        function undoMove() {
-            if (moves.length > 0) {
-                const lastMove = moves.pop();
-                swapCells(lastMove.index1, lastMove.index2);
-            }
-        }
-
-        function selectCell(index) {
-            if (selectedCells.length === 0) {
-                selectedCells.push(index);
-            } else if (selectedCells.length === 1) {
-                const validMove = isValidMove(selectedCells[0], index);
-                if (validMove) {
-                    swapCells(selectedCells[0], index);
-                    selectedCells = [];
-                    checkMatches();
-                } else {
-                    selectedCells = [index];
-                }
-            }
-        }
-
-        function swapCells(index1, index2) {
-            const temp = gameBoard[index1];
-            gameBoard[index1] = gameBoard[index2];
-            gameBoard[index2] = temp;
-
-            moves.push({ index1, index2 });
-
-            renderBoard();
-        }
-
-        function renderBoard() {
-            const container = document.getElementById("game-container");
-            container.childNodes.forEach((cell, index) => {
-                cell.innerText = gameBoard[index];
-            });
-        }
-
-        function checkMatches() {
-            const matches = findMatches();
-            if (matches.length > 0) {
-                removeMatches(matches);
-                refillBoard();
-                renderBoard();
-            }
-        }
-
-        function findMatches() {
-            const matches = [];
-
-            // Найти горизонтальные совпадения
-            for (let i = 0; i < 64; i += 8) {
-                for (let j = 0; j < 6; j++) {
-                    const start = i + j;
-                    if (gameBoard[start] === gameBoard[start + 1] && gameBoard[start + 1] === gameBoard[start + 2]) {
-                        matches.push(start, start + 1, start + 2);
-                    }
-                }
-            }
-
-            // Найти вертикальные совпадения
-            for (let i = 0; i < 8; i++) {
-                for (let j = 0; j < 6; j++) {
-                    const start = i + j * 8;
-                    if (gameBoard[start] === gameBoard[start + 8] && gameBoard[start + 8] === gameBoard[start + 16]) {
-                        matches.push(start, start + 8, start + 16);
-                    }
-                }
-            }
-
-            return [...new Set(matches)];
-        }
-
-        function removeMatches(matches) {
-            matches.forEach(index => {
-                gameBoard[index] = null; // Убираем совпавшие элементы
-            });
-        }
-
-        function refillBoard() {
+        function generateBoard() {
+            gameBoard.innerHTML = '';
+            let boardTiles = [];
             for (let i = 0; i < 64; i++) {
-                if (gameBoard[i] === null) {
-                    gameBoard[i] = emojis[Math.floor(Math.random() * emojis.length)];
-                }
+                let tile = document.createElement('div');
+                tile.classList.add('tile');
+                let tileEmoji = tiles[Math.floor(Math.random() * tiles.length)];
+                tile.textContent = tileEmoji;
+                tile.setAttribute('data-emoji', tileEmoji);
+                gameBoard.appendChild(tile);
+                boardTiles.push(tile);
             }
+            detectMatches(boardTiles);
         }
 
-        function isValidMove(index1, index2) {
-            const adjacent = Math.abs(index1 - index2) === 1 || Math.abs(index1 - index2) === 8;
-            return adjacent && (gameBoard[index1] === gameBoard[index2] || checkPotentialMatch(index1, index2));
+        function detectMatches(boardTiles) {
+            // Implement logic to detect initial matches
         }
 
-        function checkPotentialMatch(index1, index2) {
-            // Проверяем возможность создания совпадений при обмене элементов
-            swapCells(index1, index2);
-            const matches = findMatches();
-            swapCells(index1, index2);
-            return matches.length > 0;
+        function checkMatch() {
+            // Implement logic for checking matches after a move
         }
 
-        startGame();
+        function handleTileClick(event) {
+            // Implement logic for swapping tiles and checking for matches
+        }
+
+        function createBomb() {
+            // Implement bomb creation and explosion logic
+        }
+
+        function updateCoins(amount) {
+            coins += amount;
+            document.getElementById('coin-count').textContent = `Coins: ${coins} 🌕`;
+        }
+
+        function updateSteps(amount) {
+            steps -= amount;
+            document.getElementById('steps-count').textContent = `Steps left: ${steps}`;
+        }
+
+        document.getElementById('start-game').addEventListener('click', startGame);
+        document.getElementById('pause-button').addEventListener('click', () => alert("Game Paused"));
+        document.getElementById('restart-button').addEventListener('click', startGame);
+        document.getElementById('undo-button').addEventListener('click', () => alert("Undo Last Move"));
+        document.getElementById('shop-button').addEventListener('click', () => {
+            document.getElementById('shop').classList.toggle('hidden');
+        });
+
+        document.querySelectorAll('.buy-item').forEach(button => {
+            button.addEventListener('click', (event) => {
+                const item = event.target.getAttribute('data-item');
+                if (item === 'bomb' && coins >= 40) {
+                    updateCoins(-40);
+                    alert("Bought a Bomb 💣");
+                } else if (item === 'move' && coins >= 1) {
+                    updateCoins(-1);
+                    updateSteps(-1);
+                    alert("Bought 1 Move");
+                } else {
+                    alert("Not enough coins!");
+                }
+            });
+        });
+
+        // Add event listeners for tile click events
+        gameBoard.addEventListener('click', handleTileClick);
     </script>
 
 </body>
