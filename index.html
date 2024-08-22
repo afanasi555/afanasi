@@ -18,6 +18,7 @@
             align-items: center;
             justify-content: center;
             font-size: 24px;
+            cursor: pointer;
         }
         .task-item {
             margin: 5px 0;
@@ -32,6 +33,19 @@
             background-color: #fff;
             z-index: 1000;
         }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .close-btn {
+            cursor: pointer;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .close-btn:hover {
+            color: red;
+        }
     </style>
 </head>
 <body>
@@ -44,23 +58,29 @@
         <button onclick="openShop()">Магазин 🛍️</button>
         <button onclick="openInventory()">Инвентарь</button>
         <button onclick="openStats()">Статистика</button>
-        <button onclick="closeShop()">Скрыть магазин</button>
-        <span id="moves">Ходов: 20</span>
-        <span id="coins">Монеты: 0</span>
     </div>
     <div id="task-list"></div>
     <div class="game-board"></div>
     <div class="shop">
-        <h2>Магазин</h2>
+        <div class="modal-header">
+            <h2>Магазин</h2>
+            <span class="close-btn" onclick="closeShop()">×</span>
+        </div>
         <button onclick="buyBomb()">Купить бомбу (40 монет)</button>
         <button onclick="buyMove()">Добавить ход (1 монета)</button>
     </div>
     <div class="inventory">
-        <h2>Инвентарь</h2>
+        <div class="modal-header">
+            <h2>Инвентарь</h2>
+            <span class="close-btn" onclick="closeInventory()">×</span>
+        </div>
         <p id="inventory-content"></p>
     </div>
     <div class="stats">
-        <h2>Статистика</h2>
+        <div class="modal-header">
+            <h2>Статистика</h2>
+            <span class="close-btn" onclick="closeStats()">×</span>
+        </div>
         <p id="stats-content"></p>
     </div>
 
