@@ -19,8 +19,8 @@
         .game-container {
             margin: 20px auto;
             display: grid;
-            grid-template-columns: repeat(6, 50px);
-            grid-template-rows: repeat(6, 50px);
+            grid-template-columns: repeat(8, 50px);
+            grid-template-rows: repeat(8, 50px);
             gap: 5px;
             width: fit-content;
         }
@@ -48,21 +48,8 @@
             font-size: 16px;
             cursor: pointer;
         }
-        .level-button {
-            padding: 10px;
-            font-size: 16px;
-            margin: 5px;
-            width: 60px;
-        }
-        .disabled {
-            opacity: 0.5;
-            pointer-events: none;
-        }
-        .shop, .reset, .stars {
-            font-size: 24px;
-        }
-        .hidden {
-            visibility: hidden;
+        .bomb {
+            color: red;
         }
     </style>
 </head>
@@ -80,42 +67,18 @@
         <!-- Игровое поле будет генерироваться здесь -->
     </div>
 
-    <div class="buttons">
-        <button class="shop" onclick="openShop()">🛍️ Shop</button>
-        <button class="reset" onclick="restartLevel()">🔃 Restart</button>
-    </div>
-
-    <h2>Level Select</h2>
-    <div id="level-select">
-        <!-- Кнопки уровней -->
-        <button class="level-button" onclick="selectLevel(1)">Level 1</button>
-        <button class="level-button disabled" onclick="selectLevel(2)">Level 2</button>
-        <button class="level-button disabled" onclick="selectLevel(3)">Level 3</button>
-        <!-- Добавить больше уровней по мере прохождения -->
-    </div>
-
-    <div class="status">
-        <div>Stars: <span id="stars">🌟🌟🌟</span></div>
-        <div>Coins: <span id="coins">🌕 0</span></div>
-    </div>
-
     <script>
-        const emojis = ["⭐", "✨", "💦", "🔥", "🎉", "❤️", "🧡", "💛", "💚", "🩵", "💙", "💜", "🤎", "🖤", "🩶", "💅", "🌹", "🌸", "🌱", "🌳", "🍀", "🌲", "⛄", "☃️", "🌝", "🌚", "🌕", "🐱", "🐯", "🦁", "🦄", "🐸", "🐘", "🐣", "🐟", "🐠", "🐡", "🪼", "🐞", "🐝", "🍓", "🍒", "🍎", "🍉", "🍌", "🍍", "🍇", "🍔", "🥨", "🍟", "🍕", "🥗", "🍭", "🍬", "🍫", "🍪", "🍯", "🥤", "🎀", "🎁", "🎈", "🎊", "🎉", "🧨", "⚽", "🏀", "🧶", "📀", "💿", "💸", "👠", "⚜️", "🔱", "☢️", "☣️"];
+        const emojis = ["⭐", "✨", "💦", "🔥", "🎉", "❤️", "🧡", "💛", "💚", "💙", "💜", "🍓", "🍒", "🍎"];
         let gameBoard = [];
-        let selectedLevel = 1;
-        let moves = [];
-        let coins = 0;
-        let stars = 3;
-        let maxMoves = 15;
-        let currentMoves = 0;
         let selectedCells = [];
+        let moves = [];
 
         function generateGameBoard() {
             const container = document.getElementById("game-container");
             container.innerHTML = '';
             gameBoard = [];
 
-            for (let i = 0; i < 36; i++) {
+            for (let i = 0; i < 64; i++) { // 8x8 поле
                 const cell = document.createElement('div');
                 cell.classList.add('cell');
                 const emoji = emojis[Math.floor(Math.random() * emojis.length)];
@@ -128,39 +91,31 @@
         }
 
         function startGame() {
-            currentMoves = 0;
             generateGameBoard();
-            updateStatus();
         }
 
         function pauseGame() {
-            // Pause the game logic
             alert("Game paused.");
         }
 
         function undoMove() {
             if (moves.length > 0) {
                 const lastMove = moves.pop();
-                gameBoard[lastMove.index] = lastMove.emoji;
-                renderBoard();
-                currentMoves--;
-                updateStatus();
+                swapCells(lastMove.index1, lastMove.index2);
             }
-        }
-
-        function selectLevel(level) {
-            if (level > selectedLevel) return; // Нельзя перепрыгивать уровни
-            selectedLevel = level;
-            startGame();
         }
 
         function selectCell(index) {
             if (selectedCells.length === 0) {
                 selectedCells.push(index);
             } else if (selectedCells.length === 1) {
-                if (Math.abs(selectedCells[0] - index) === 1 || Math.abs(selectedCells[0] - index) === 6) {
+                const validMove = isValidMove(selectedCells[0], index);
+                if (validMove) {
                     swapCells(selectedCells[0], index);
                     selectedCells = [];
+                    checkMatches();
+                } else {
+                    selectedCells = [index];
                 }
             }
         }
@@ -170,40 +125,9 @@
             gameBoard[index1] = gameBoard[index2];
             gameBoard[index2] = temp;
 
-            currentMoves++;
-            moves.push({index: index1, emoji: temp});
+            moves.push({ index1, index2 });
 
             renderBoard();
-            checkMatches();
-            updateStatus();
-        }
-
-        function checkMatches() {
-            // Логика проверки совпадений и удаления их с поля
-            // Если совпадения есть - удаляем их, добавляем очки и монеты, заполняем поле новыми объектами
-        }
-
-        function bombAction(index) {
-            // Логика действия бомбы
-            const bombArea = getBombArea(index);
-            bombArea.forEach(i => {
-                gameBoard[i] = emojis[Math.floor(Math.random() * emojis.length)];
-            });
-            renderBoard();
-        }
-
-        function getBombArea(index) {
-            // Получение области 4x4 вокруг бомбы
-            let area = [];
-            for (let i = -2; i <= 2; i++) {
-                for (let j = -2; j <= 2; j++) {
-                    const targetIndex = index + i + j * 6;
-                    if (targetIndex >= 0 && targetIndex < 36) {
-                        area.push(targetIndex);
-                    }
-                }
-            }
-            return area;
         }
 
         function renderBoard() {
@@ -213,21 +137,69 @@
             });
         }
 
-        function updateStatus() {
-            document.getElementById("coins").innerText = `🌕 ${coins}`;
-            document.getElementById("stars").innerText = stars >= 3 ? '🌟🌟🌟' : stars === 2 ? '🌟🌟' : '🌟';
+        function checkMatches() {
+            const matches = findMatches();
+            if (matches.length > 0) {
+                removeMatches(matches);
+                refillBoard();
+                renderBoard();
+            }
         }
 
-        function openShop() {
-            alert("Welcome to the shop! You can buy bombs or extra moves.");
-            // Логика покупки в магазине
+        function findMatches() {
+            const matches = [];
+
+            // Найти горизонтальные совпадения
+            for (let i = 0; i < 64; i += 8) {
+                for (let j = 0; j < 6; j++) {
+                    const start = i + j;
+                    if (gameBoard[start] === gameBoard[start + 1] && gameBoard[start + 1] === gameBoard[start + 2]) {
+                        matches.push(start, start + 1, start + 2);
+                    }
+                }
+            }
+
+            // Найти вертикальные совпадения
+            for (let i = 0; i < 8; i++) {
+                for (let j = 0; j < 6; j++) {
+                    const start = i + j * 8;
+                    if (gameBoard[start] === gameBoard[start + 8] && gameBoard[start + 8] === gameBoard[start + 16]) {
+                        matches.push(start, start + 8, start + 16);
+                    }
+                }
+            }
+
+            return [...new Set(matches)];
         }
 
-        function restartLevel() {
-            startGame();
+        function removeMatches(matches) {
+            matches.forEach(index => {
+                gameBoard[index] = null; // Убираем совпавшие элементы
+            });
         }
 
-        // Дополнительная логика для расчета ходов, уровней, и т.д.
+        function refillBoard() {
+            for (let i = 0; i < 64; i++) {
+                if (gameBoard[i] === null) {
+                    gameBoard[i] = emojis[Math.floor(Math.random() * emojis.length)];
+                }
+            }
+        }
+
+        function isValidMove(index1, index2) {
+            const adjacent = Math.abs(index1 - index2) === 1 || Math.abs(index1 - index2) === 8;
+            return adjacent && (gameBoard[index1] === gameBoard[index2] || checkPotentialMatch(index1, index2));
+        }
+
+        function checkPotentialMatch(index1, index2) {
+            // Проверяем возможность создания совпадений при обмене элементов
+            swapCells(index1, index2);
+            const matches = findMatches();
+            swapCells(index1, index2);
+            return matches.length > 0;
+        }
+
+        startGame();
     </script>
 
 </body>
