@@ -36,7 +36,7 @@
             cursor: pointer;
             user-select: none;
         }
-        .bomb {
+        .tile.bomb {
             background-color: red;
             color: white;
         }
@@ -172,12 +172,14 @@
     </div>
 
     <script>
-        const tiles = ['⭐', '✨', '💦', '🔥', '🎉', '❤️', '🍓', '🍒']; // Add more emoji as needed
+        const emojis = ['⭐', '✨', '💦', '🔥', '🎉', '❤️', '🍓', '🍒', '🍉', '🍇', '🍍', '🍎', '🍌'];
+        const animals = ['🐱', '🐯', '🦁', '🦄', '🐸', '🐘', '🐞', '🐝'];
         let gameBoard = document.getElementById('game-board');
         let currentLevel = 1;
         let coins = 0;
         let steps = 20;
         let firstTile = null;
+        let levelData = {};
 
         const tasks = [
             {emoji: '🍓', count: 3},
@@ -202,13 +204,22 @@
             for (let i = 0; i < 64; i++) {
                 let tile = document.createElement('div');
                 tile.classList.add('tile');
-                let tileEmoji = tiles[Math.floor(Math.random() * tiles.length)];
+                let tileEmoji = getRandomEmoji();
                 tile.textContent = tileEmoji;
                 tile.setAttribute('data-emoji', tileEmoji);
                 gameBoard.appendChild(tile);
                 boardTiles.push(tile);
             }
             gameBoard.querySelectorAll('.tile').forEach(tile => tile.addEventListener('click', handleTileClick));
+        }
+
+        function getRandomEmoji() {
+            if (currentLevel > tasks.length) {
+                // Adding new emojis or shapes after the last level
+                return animals[Math.floor(Math.random() * animals.length)];
+            } else {
+                return emojis[Math.floor(Math.random() * emojis.length)];
+            }
         }
 
         function updateTask() {
@@ -227,8 +238,10 @@
                     swapTiles(firstTile, secondTile);
                     firstTile.classList.remove('selected');
                     firstTile = null;
-                    checkMatch();
-                    updateSteps(1);
+                    if (checkMatch()) {
+                        refillBoard();
+                        updateSteps(1);
+                    }
                 } else {
                     firstTile.classList.remove('selected');
                     firstTile = clickedTile;
@@ -238,34 +251,35 @@
         }
 
         function areAdjacent(tile1, tile2) {
-            const tiles = Array.from(gameBoard.children);
-            const index1 = tiles.indexOf(tile1);
-            const index2 = tiles.indexOf(tile2);
-            const diff = Math.abs(index1 - index2);
-
-            return diff === 1 || diff === 8 || diff === 7 || diff === 9; // включение диагоналей
+            const index1 = Array.from(gameBoard.children).indexOf(tile1);
+            const index2 = Array.from(gameBoard.children).indexOf(tile2);
+            return Math.abs(index1 - index2) === 1 || Math.abs(index1 - index2) === 8;
         }
 
         function swapTiles(tile1, tile2) {
             const tempEmoji = tile1.getAttribute('data-emoji');
             tile1.setAttribute('data-emoji', tile2.getAttribute('data-emoji'));
-            tile1.textContent = tile2.textContent;
             tile2.setAttribute('data-emoji', tempEmoji);
-            tile2.textContent = tempEmoji;
+            tile1.textContent = tile1.getAttribute('data-emoji');
+            tile2.textContent = tile2.getAttribute('data-emoji');
         }
 
         function checkMatch() {
             const tiles = Array.from(gameBoard.children);
+            let hasMatch = false;
 
             for (let i = 0; i < tiles.length; i++) {
-                const emoji = tiles[i].getAttribute('data-emoji');
                 if (i % 8 < 6 && checkLine(tiles[i], tiles[i + 1], tiles[i + 2])) {
                     removeTiles(tiles[i], tiles[i + 1], tiles[i + 2]);
+                    hasMatch = true;
                 }
                 if (i < 48 && checkLine(tiles[i], tiles[i + 8], tiles[i + 16])) {
                     removeTiles(tiles[i], tiles[i + 8], tiles[i + 16]);
+                    hasMatch = true;
                 }
             }
+
+            return hasMatch;
         }
 
         function checkLine(tile1, tile2, tile3) {
@@ -287,17 +301,14 @@
                     advanceToNextLevel();
                 }
             }
-
-            refillBoard();
         }
 
         function refillBoard() {
             const tiles = Array.from(gameBoard.children);
             tiles.forEach(tile => {
                 if (tile.textContent === '') {
-                    let newEmoji = tiles[Math.floor(Math.random() * tiles.length)];
-                    tile.textContent = newEmoji;
-                    tile.setAttribute('data-emoji', newEmoji);
+                    tile.textContent = getRandomEmoji();
+                    tile.setAttribute('data-emoji', tile.textContent);
                 }
             });
         }
@@ -320,8 +331,16 @@
                 generateBoard();
                 updateTask();
             } else {
-                alert('You have completed all levels!');
+                alert('Congratulations! You have completed all levels!');
+                showEndgameScreen();
             }
+        }
+
+        function showEndgameScreen() {
+            // Show new objects and forms after all levels
+            emojis.push('🎨', '🌟', '🚀');
+            generateBoard();
+            document.getElementById('task-panel').classList.add('hidden');
         }
 
         function restartLevel() {
@@ -374,7 +393,6 @@
                 }
             });
         });
-
     </script>
 
 </body>
