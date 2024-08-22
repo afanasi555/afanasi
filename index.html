@@ -8,80 +8,73 @@
         .game-board {
             display: grid;
             grid-template-columns: repeat(8, 50px);
-            grid-gap: 5px;
+            grid-gap: 2px;
+            margin: 20px;
         }
         .cell {
             width: 50px;
             height: 50px;
-            border: 1px solid #ccc;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 24px;
+            border: 1px solid #ccc;
             cursor: pointer;
-        }
-        .task-item {
-            margin: 5px 0;
         }
         .shop, .inventory, .stats {
             display: none;
             position: absolute;
-            top: 50px;
-            left: 50px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             padding: 20px;
-            border: 1px solid #000;
-            background-color: #fff;
-            z-index: 1000;
+            background: #fff;
+            border: 1px solid #ddd;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.5);
         }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .close-btn {
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
             cursor: pointer;
             font-size: 20px;
-            font-weight: bold;
-        }
-        .close-btn:hover {
-            color: red;
         }
     </style>
 </head>
 <body>
     <h1>Афанасьев заигрыш</h1>
-    <div>
-        <button onclick="startGame()">Начать игру</button>
-        <button onclick="pauseGame()">Пауза</button>
-        <button onclick="resetGame()">Заново</button>
-        <button onclick="undoMove()">Отменить ход</button>
-        <button onclick="openShop()">Магазин 🛍️</button>
-        <button onclick="openInventory()">Инвентарь</button>
-        <button onclick="openStats()">Статистика</button>
-    </div>
+    <div id="coins">Монеты: 0</div>
+    <div id="moves">Ходов: 20</div>
     <div id="task-list"></div>
     <div class="game-board"></div>
+    <button onclick="openShop()">🛍️ Магазин</button>
+    <button onclick="openInventory()">📦 Инвентарь</button>
+    <button onclick="openStats()">📈 Статистика</button>
+    <button onclick="startGame()">Начать игру</button>
+    <button onclick="pauseGame()">Пауза</button>
+    <button onclick="resetGame()">Сбросить</button>
+    <button onclick="undoMove()">Отменить ход</button>
+
+    <!-- Магазин -->
     <div class="shop">
-        <div class="modal-header">
-            <h2>Магазин</h2>
-            <span class="close-btn" onclick="closeShop()">×</span>
-        </div>
+        <span class="close-button" onclick="closeShop()">✖</span>
+        <h2>Магазин</h2>
         <button onclick="buyBomb()">Купить бомбу (40 монет)</button>
-        <button onclick="buyMove()">Добавить ход (1 монета)</button>
+        <button onclick="buyMove()">Купить ход (1 монета)</button>
     </div>
+
+    <!-- Инвентарь -->
     <div class="inventory">
-        <div class="modal-header">
-            <h2>Инвентарь</h2>
-            <span class="close-btn" onclick="closeInventory()">×</span>
-        </div>
-        <p id="inventory-content"></p>
+        <span class="close-button" onclick="closeInventory()">✖</span>
+        <h2>Инвентарь</h2>
+        <div id="inventory-content"></div>
     </div>
+
+    <!-- Статистика -->
     <div class="stats">
-        <div class="modal-header">
-            <h2>Статистика</h2>
-            <span class="close-btn" onclick="closeStats()">×</span>
-        </div>
-        <p id="stats-content"></p>
+        <span class="close-button" onclick="closeStats()">✖</span>
+        <h2>Статистика</h2>
+        <div id="stats-content"></div>
     </div>
 
     <script>
@@ -91,7 +84,6 @@
         let tasks = [{ emoji: "🍓", count: 3 }]; // Список задач для текущего уровня
         let selectedCell = null; // Переменная для хранения выбранной ячейки
         let inventory = []; // Инвентарь для хранения купленных бомб
-        let playerStats = {}; // Статистика игрока (ключи — id игроков, значения — уровень)
 
         function startGame() {
             alert('Игра началась!');
@@ -122,8 +114,8 @@
         }
 
         function openInventory() {
-            document.getElementById('inventory-content').textContent = inventory.join(', ');
             document.querySelector('.inventory').style.display = 'block';
+            updateInventory();
         }
 
         function closeInventory() {
@@ -131,9 +123,8 @@
         }
 
         function openStats() {
-            let statsString = Object.keys(playerStats)
-                .map(player => `Игрок ${player}: Уровень ${playerStats[player]}`)
-                .join('\n');
+            let statsString = "Статистика игроков:\n";
+            // Здесь можно добавить реальную статистику
             document.getElementById('stats-content').textContent = statsString;
             document.querySelector('.stats').style.display = 'block';
         }
@@ -190,7 +181,10 @@
                 board.appendChild(cell);
             }
             // Запускаем проверку совпадений после генерации поля
-            checkMatches();
+            setTimeout(() => {
+                checkMatches();  // Проверка на совпадения
+                refillBoard();  // Заполнение пустых мест новыми объектами
+            }, 500);
         }
 
         function getRandomEmoji() {
@@ -243,95 +237,4 @@
             for (let i = 0; i < 64; i++) {
                 const row = Math.floor(i / 8);
 
-                // Проверка горизонтальных совпадений
-                if (i % 8 <= 5 && board[i].textContent === board[i + 1].textContent && 
-                    board[i].textContent === board[i + 2].textContent && board[i].textContent === board[i + 3].textContent) {
-                    createBomb(i + 1);
-                    matchedCells.push(i, i + 1, i + 2, i + 3);  // Горизонтальное совпадение
-                }
-
-                // Проверка вертикальных совпадений
-                if (row <= 4 && board[i].textContent === board[i + 8].textContent && 
-                    board[i].textContent === board[i + 16].textContent && board[i].textContent === board[i + 24].textContent) {
-                    createBomb(i + 8);
-                    matchedCells.push(i, i + 8, i + 16, i + 24);  // Вертикальное совпадение
-                }
-            }
-
-            if (matchedCells.length > 0) {
-                matchedCells = [...new Set(matchedCells)]; // Удаляем дубликаты
-                matchedCells.forEach(index => {
-                    board[index].textContent = getRandomEmoji();  // Заменяем совпавшие элементы новыми
-                });
-                // После обновления поля проверяем задачи
-                checkTasks();
-            }
-        }
-
-        function createBomb(index) {
-            let board = document.querySelectorAll('.cell');
-            board[index].textContent = "💣";  // Устанавливаем бомбу на место совпадения
-        }
-
-        function refillBoard() {
-            let board = document.querySelectorAll('.cell');
-            for (let i = 0; i < board.length; i++) {
-                if (!board[i].textContent) {
-                    board[i].textContent = getRandomEmoji();  // Заполняем пустые места новыми объектами
-                }
-            }
-        }
-
-        function checkTasks() {
-            tasks.forEach(task => {
-                let count = 0;
-                document.querySelectorAll('.cell').forEach(cell => {
-                    if (cell.textContent === task.emoji) {
-                        count++;
-                    }
-                });
-                task.count -= count;
-                if (task.count <= 0) {
-                    alert('Задача выполнена!');
-                    tasks = tasks.filter(t => t !== task);  // Удаляем выполненную задачу
-                    updateTaskList();
-                }
-            });
-        }
-
-        function buyBomb() {
-            if (coins >= 40) {
-                coins -= 40;
-                inventory.push('💣');  // Добавляем бомбу в инвентарь
-                alert('Бомба куплена и добавлена в инвентарь!');
-                updateInventory();
-            } else {
-                alert('Недостаточно монет.');
-            }
-            updateCoins();
-        }
-
-        function buyMove() {
-            if (coins >= 1) {
-                coins -= 1;
-                moves += 1;
-                updateMoves();
-            } else {
-                alert('Недостаточно монет.');
-            }
-        }
-
-        function updateCoins() {
-            document.getElementById("coins").textContent = `Монеты: ${coins}`;
-        }
-
-        function updateMoves() {
-            document.getElementById("moves").textContent = `Ходов: ${moves}`;
-        }
-
-        function updateInventory() {
-            document.getElementById('inventory-content').textContent = inventory.join(', ');
-        }
-    </script>
-</body>
-</html>
+                // Провер
