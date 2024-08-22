@@ -8,9 +8,8 @@
         body {
             font-family: Arial, sans-serif;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            height: 100vh;
             margin: 0;
             background-color: #f0f0f0;
         }
@@ -18,6 +17,7 @@
             display: grid;
             grid-template-columns: repeat(8, 50px);
             grid-gap: 5px;
+            margin-top: 20px;
         }
         .cell {
             width: 50px;
@@ -30,15 +30,57 @@
             border: 1px solid #ddd;
             cursor: pointer;
         }
+        .shop {
+            margin-top: 20px;
+            background-color: #ffffff;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .shop button {
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
+    <h1>Три в ряд</h1>
+
+    <!-- Игровое поле -->
     <div class="board" id="board">
         <!-- Клетки игрового поля будут генерироваться с помощью JavaScript -->
     </div>
 
+    <!-- Магазин -->
+    <div class="shop">
+        <h2>🛍️ Магазин</h2>
+        <p>Ваши монеты: <span id="coins">0</span> 🌕</p>
+        <button onclick="buyItem('bomb')">Купить Бомбу 💣 - 40 монет</button>
+        <button onclick="buyItem('move')">Купить ход ➕ - 1 монета</button>
+    </div>
+
     <script>
         const objects = ['⭐', '✨', '💦', '🔥', '🎉', '❤️', '🧡', '💛'];
+        let coins = 0;
+
+        // Инициализация WebApp
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Развернуть WebApp на весь экран
+
+        // Получение монет от бота
+        tg.onEvent('mainButtonClicked', () => {
+            tg.MainButton.setText("Загрузка...");
+            tg.sendData('coins_request');
+        });
+
+        tg.onEvent('webAppData', (data) => {
+            const userData = JSON.parse(data);
+            coins = userData.coins;
+            document.getElementById('coins').innerText = coins;
+            tg.MainButton.hide();
+        });
 
         function generateBoard(size) {
             const board = [];
@@ -67,13 +109,31 @@
         }
 
         function handleCellClick(x, y) {
-            alert(Вы нажали на клетку (${x}, ${y}));
-            // Реализуйте логику перемещения объектов здесь
+            alert(`Вы нажали на клетку (${x}, ${y})`);
+        }
+
+        function buyItem(item) {
+            if (item === 'bomb' && coins >= 40) {
+                coins -= 40;
+                alert('Вы купили бомбу!');
+            } else if (item === 'move' && coins >= 1) {
+                coins -= 1;
+                alert('Вы купили дополнительный ход!');
+            } else {
+                alert('Недостаточно монет!');
+            }
+            document.getElementById('coins').innerText = coins;
+
+            // Отправляем данные обратно боту
+            tg.sendData(JSON.stringify({item, coins}));
         }
 
         // Генерируем и отображаем игровое поле
         const board = generateBoard(8);
         renderBoard(board);
+
+        // Обновление монет в магазине
+        document.getElementById('coins').innerText = coins;
     </script>
 </body>
 </html>
