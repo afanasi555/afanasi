@@ -1,94 +1,252 @@
-body {
-    font-family: Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color: #f0f0f0;
+let moves = 20;
+let coins = 0;
+let currentLevel = 1;
+let tasks = [{ emoji: "🍓", count: 3 }]; // Список задач для текущего уровня
+let selectedCell = null; // Переменная для хранения выбранной ячейки
+let inventory = []; // Инвентарь для хранения купленных бомб
+
+function startGame() {
+    alert('Игра началась!');
+    generateBoard();
+    updateMoves();
 }
 
-h1 {
-    margin-top: 20px;
+function pauseGame() {
+    alert('Игра на паузе.');
 }
 
-.game-menu, .level-select, .shop {
-    margin: 10px;
-    padding: 10px;
-    border: 2px solid #000;
-    border-radius: 10px;
-    background-color: #fff;
+function resetGame() {
+    alert('Игра перезапущена!');
+    generateBoard();
+    updateMoves();
 }
 
-.game-board {
-    display: grid;
-    grid-template-columns: repeat(8, 60px);
-    grid-template-rows: repeat(8, 60px);
-    gap: 5px;
-    margin: 20px 0;
+function undoMove() {
+    alert('Ход отменен.');
 }
 
-.cell {
-    width: 60px;
-    height: 60px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 30px;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    cursor: pointer;
+function openShop() {
+    document.querySelector('.shop').style.display = 'block';
 }
 
-.bomb {
-    background-color: red;
-    color: white;
+function closeShop() {
+    document.querySelector('.shop').style.display = 'none';
 }
 
-.game-controls {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
+function openInventory() {
+    document.getElementById('inventory-content').textContent = inventory.join(', ');
+    document.querySelector('.inventory').style.display = 'block';
 }
 
-.game-button {
-    padding: 10px 20px;
-    border: none;
-    background-color: #007bff;
-    color: white;
-    cursor: pointer;
-    border-radius: 5px;
+function closeInventory() {
+    document.querySelector('.inventory').style.display = 'none';
 }
 
-.game-button:disabled {
-    background-color: #cccccc;
+function openStats() {
+    let statsString = Object.keys(playerStats)
+        .map(player => `Игрок ${player}: Уровень ${playerStats[player]}`)
+        .join('\n');
+    document.getElementById('stats-content').textContent = statsString;
+    document.querySelector('.stats').style.display = 'block';
 }
 
-.shop-button {
-    font-size: 20px;
-    margin-left: 10px;
+function closeStats() {
+    document.querySelector('.stats').style.display = 'none';
 }
 
-.level-button {
-    display: inline-block;
-    margin: 5px;
-    padding: 10px;
-    background-color: #28a745;
-    color: white;
-    border-radius: 5px;
-    cursor: pointer;
+function selectLevel(level) {
+    if (level > currentLevel) {
+        alert('Этот уровень пока заблокирован.');
+        return;
+    }
+    currentLevel = level;
+    alert(`Вы выбрали уровень ${level}`);
+    loadLevel(level);
 }
 
-.locked {
-    background-color: gray;
+function loadLevel(level) {
+    moves = 20 + level * 5;  // Пример увеличения шагов с каждым уровнем
+    tasks = generateTasksForLevel(level);  // Генерация задач
+    updateTaskList();
+    generateBoard();  // Генерация игрового поля
+    updateMoves();
 }
 
-.frozen {
-    background-color: rgba(173, 216, 230, 0.6); /* лед */
+function generateTasksForLevel(level) {
+    let taskList = [];
+    if (level >= 5) {
+        taskList.push({ emoji: "🍓", count: 5 });
+        taskList.push({ emoji: "🍒", count: 4 });
+    } else {
+        taskList.push({ emoji: "🍓", count: 3 + level });
+    }
+    return taskList;
 }
 
-.task-list {
-    margin-top: 10px;
+function updateTaskList() {
+    let taskListDiv = document.getElementById("task-list");
+    taskListDiv.innerHTML = "";
+    tasks.forEach((task, index) => {
+        taskListDiv.innerHTML += `<p class="task-item">Задача ${index + 1}: Собрать ${task.count} ${task.emoji}</p>`;
+    });
 }
 
-.task-item {
-    margin-bottom: 5px;
+function generateBoard() {
+    let board = document.querySelector('.game-board');
+    board.innerHTML = "";  // Очищаем поле
+    for (let i = 0; i < 64; i++) {
+        let cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.textContent = getRandomEmoji();  // Генерация случайного объекта
+        cell.addEventListener('click', () => selectCell(cell, i));  // Добавляем обработчик события для клика
+        board.appendChild(cell);
+    }
+    // Запускаем проверку совпадений после генерации поля
+    checkMatches();
 }
+
+function getRandomEmoji() {
+    const emojis = ["⭐", "✨", "💦", "🔥", "🎉", "❤️", "🍓", "🍒", "🍉", "🍕", "🐱", "🐯"];
+    return emojis[Math.floor(Math.random() * emojis.length)];
+}
+
+function selectCell(cell, index) {
+    if (selectedCell === null) {
+        selectedCell = { element: cell, index: index };
+        cell.style.border = '2px solid red';  // Выделяем выбранную ячейку
+    } else {
+        // Проверяем, можно ли поменять местами с выбранной ячейкой
+        if (isAdjacent(selectedCell.index, index)) {
+            swapCells(selectedCell.element, cell);  // Меняем местами ячейки
+            moves--;
+            updateMoves();
+            // Проверяем на совпадения после каждого хода
+            setTimeout(() => {
+                checkMatches();  // Проверка на совпадения
+                refillBoard();  // Заполнение пустых мест новыми объектами
+            }, 500);
+        }
+        selectedCell.element.style.border = '1px solid #ccc';  // Убираем выделение
+        selectedCell = null;  // Сбрасываем выбранную ячейку
+    }
+}
+
+function isAdjacent(index1, index2) {
+    const row1 = Math.floor(index1 / 8);
+    const col1 = index1 % 8;
+    const row2 = Math.floor(index2 / 8);
+    const col2 = index2 % 8;
+    return (Math.abs(row1 - row2) + Math.abs(col1 - col2)) === 1;
+}
+
+function swapCells(cell1, cell2) {
+    const temp = cell1.textContent;
+    cell1.textContent = cell2.textContent;
+    cell2.textContent = temp;
+}
+
+function checkMatches() {
+    let board = document.querySelectorAll('.cell');
+    let matchedCells = [];
+    let toCheck = [];
+    let index;
+
+    // Проверка горизонтальных и вертикальных совпадений
+    for (let i = 0; i < 64; i++) {
+        const row = Math.floor(i / 8);
+
+        // Проверка горизонтальных совпадений
+        if (i % 8 <= 5 && board[i].textContent === board[i + 1].textContent && 
+            board[i].textContent === board[i + 2].textContent && board[i].textContent === board[i + 3].textContent) {
+            createBomb(i + 1);
+            matchedCells.push(i, i + 1, i + 2, i + 3);  // Горизонтальное совпадение
+        }
+
+        // Проверка вертикальных совпадений
+        if (row <= 4 && board[i].textContent === board[i + 8].textContent && 
+            board[i].textContent === board[i + 16].textContent && board[i].textContent === board[i + 24].textContent) {
+            createBomb(i + 8);
+            matchedCells.push(i, i + 8, i + 16, i + 24);  // Вертикальное совпадение
+        }
+    }
+
+    if (matchedCells.length > 0) {
+        matchedCells = [...new Set(matchedCells)]; // Удаляем дубликаты
+        matchedCells.forEach(index => {
+            board[index].textContent = getRandomEmoji();  // Заменяем совпавшие элементы новыми
+        });
+        // После обновления поля проверяем задачи
+        checkTasks();
+    }
+}
+
+function createBomb(index) {
+    let board = document.querySelectorAll('.cell');
+    board[index].textContent = "💣";  // Устанавливаем бомбу на место совпадения
+}
+
+function refillBoard() {
+    let board = document.querySelectorAll('.cell');
+    for (let i = 0; i < board.length; i++) {
+        if (!board[i].textContent || board[i].textContent === "💣") {
+            board[i].textContent = getRandomEmoji();  // Заполняем пустые места новыми объектами
+        }
+    }
+    checkMatches();  // Проверка на совпадения после заполнения поля
+}
+
+function checkTasks() {
+    tasks.forEach(task => {
+        let count = 0;
+        document.querySelectorAll('.cell').forEach(cell => {
+            if (cell.textContent === task.emoji) {
+                count++;
+            }
+        });
+        task.count -= count;
+        if (task.count <= 0) {
+            alert('Задача выполнена!');
+            tasks = tasks.filter(t => t !== task);  // Удаляем выполненную задачу
+            updateTaskList();
+        }
+    });
+}
+
+function buyBomb() {
+    if (coins >= 40) {
+        coins -= 40;
+        inventory.push('💣');  // Добавляем бомбу в инвентарь
+        alert('Бомба куплена и добавлена в инвентарь!');
+        updateInventory();
+    } else {
+        alert('Недостаточно монет.');
+    }
+    updateCoins();
+}
+
+function buyMove() {
+    if (coins >= 1) {
+        coins -= 1;
+        moves += 1;
+        updateMoves();
+    } else {
+        alert('Недостаточно монет.');
+    }
+}
+
+function updateCoins() {
+    document.getElementById("coins").textContent = `Монеты: ${coins}`;
+}
+
+function updateMoves() {
+    document.getElementById("moves").textContent = `Ходов: ${moves}`;
+}
+
+function updateInventory() {
+    document.getElementById('inventory-content').textContent = inventory.join(', ');
+}
+
+// Инициализация игры при загрузке страницы
+window.onload = function() {
+    startGame();
+};
