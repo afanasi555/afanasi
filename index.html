@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Match-3 Game</title>
+    <title>Афанасьев заигрыш</title>
     <style>
         .game-board {
             display: grid;
@@ -49,7 +49,7 @@
     </style>
 </head>
 <body>
-    <h1>Match-3 Game</h1>
+    <h1>Афанасьев заигрыш</h1>
     <div>
         <button onclick="startGame()">Начать игру</button>
         <button onclick="pauseGame()">Пауза</button>
@@ -189,6 +189,8 @@
                 cell.addEventListener('click', () => selectCell(cell, i));  // Добавляем обработчик события для клика
                 board.appendChild(cell);
             }
+            // Запускаем проверку совпадений после генерации поля
+            checkMatches();
         }
 
         function getRandomEmoji() {
@@ -206,7 +208,11 @@
                     swapCells(selectedCell.element, cell);  // Меняем местами ячейки
                     moves--;
                     updateMoves();
-                    checkMatches();  // Проверяем на совпадения после каждого хода
+                    // Проверяем на совпадения после каждого хода
+                    setTimeout(() => {
+                        checkMatches();  // Проверка на совпадения
+                        refillBoard();  // Заполнение пустых мест новыми объектами
+                    }, 500);
                 }
                 selectedCell.element.style.border = '1px solid #ccc';  // Убираем выделение
                 selectedCell = null;  // Сбрасываем выбранную ячейку
@@ -230,18 +236,20 @@
         function checkMatches() {
             let board = document.querySelectorAll('.cell');
             let matchedCells = [];
+            let toCheck = [];
+            let index;
 
             // Проверка горизонтальных и вертикальных совпадений
             for (let i = 0; i < 64; i++) {
                 const row = Math.floor(i / 8);
-                const col = i % 8;
 
                 // Проверка горизонтальных совпадений
-                if (col <= 4 && board[i].textContent === board[i + 1].textContent && 
+                if (i % 8 <= 5 && board[i].textContent === board[i + 1].textContent && 
                     board[i].textContent === board[i + 2].textContent && board[i].textContent === board[i + 3].textContent) {
                     createBomb(i + 1);
                     matchedCells.push(i, i + 1, i + 2, i + 3);  // Горизонтальное совпадение
                 }
+
                 // Проверка вертикальных совпадений
                 if (row <= 4 && board[i].textContent === board[i + 8].textContent && 
                     board[i].textContent === board[i + 16].textContent && board[i].textContent === board[i + 24].textContent) {
@@ -251,6 +259,7 @@
             }
 
             if (matchedCells.length > 0) {
+                matchedCells = [...new Set(matchedCells)]; // Удаляем дубликаты
                 matchedCells.forEach(index => {
                     board[index].textContent = getRandomEmoji();  // Заменяем совпавшие элементы новыми
                 });
@@ -264,6 +273,15 @@
             board[index].textContent = "💣";  // Устанавливаем бомбу на место совпадения
         }
 
+        function refillBoard() {
+            let board = document.querySelectorAll('.cell');
+            for (let i = 0; i < board.length; i++) {
+                if (!board[i].textContent) {
+                    board[i].textContent = getRandomEmoji();  // Заполняем пустые места новыми объектами
+                }
+            }
+        }
+
         function checkTasks() {
             tasks.forEach(task => {
                 let count = 0;
@@ -275,9 +293,10 @@
                 task.count -= count;
                 if (task.count <= 0) {
                     alert('Задача выполнена!');
+                    tasks = tasks.filter(t => t !== task);  // Удаляем выполненную задачу
+                    updateTaskList();
                 }
             });
-            updateTaskList();
         }
 
         function buyBomb() {
