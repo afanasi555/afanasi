@@ -1,162 +1,82 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Match-3 игра</title>
+    <title>Match-3 Game</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background-color: #f0f0f0;
-        }
-
-        h1 {
-            margin-top: 20px;
-        }
-
-        .game-menu, .level-select, .shop {
-            margin: 10px;
-            padding: 10px;
-            border: 2px solid #000;
-            border-radius: 10px;
-            background-color: #fff;
-        }
-
         .game-board {
             display: grid;
-            grid-template-columns: repeat(8, 60px);
-            grid-template-rows: repeat(8, 60px);
-            gap: 5px;
-            margin: 20px 0;
+            grid-template-columns: repeat(8, 50px);
+            grid-gap: 5px;
         }
-
         .cell {
-            width: 60px;
-            height: 60px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 30px;
-            background-color: #fff;
+            width: 50px;
+            height: 50px;
             border: 1px solid #ccc;
-            cursor: pointer;
-        }
-
-        .bomb {
-            background-color: red;
-            color: white;
-        }
-
-        .game-controls {
             display: flex;
-            gap: 10px;
-            margin-top: 10px;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
         }
-
-        .game-button {
-            padding: 10px 20px;
-            border: none;
-            background-color: #007bff;
-            color: white;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-
-        .game-button:disabled {
-            background-color: #cccccc;
-        }
-
-        .shop-button {
-            font-size: 20px;
-            margin-left: 10px;
-        }
-
-        .level-button {
-            display: inline-block;
-            margin: 5px;
-            padding: 10px;
-            background-color: #28a745;
-            color: white;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .locked {
-            background-color: gray;
-        }
-
-        .frozen {
-            background-color: rgba(173, 216, 230, 0.6); /* лед */
-        }
-
-        .task-list {
-            margin-top: 10px;
-        }
-
         .task-item {
-            margin-bottom: 5px;
+            margin: 5px 0;
+        }
+        .shop, .inventory, .stats {
+            display: none;
+            position: absolute;
+            top: 50px;
+            left: 50px;
+            padding: 20px;
+            border: 1px solid #000;
+            background-color: #fff;
+            z-index: 1000;
         }
     </style>
 </head>
 <body>
-
-    <h1>Match-3 игра</h1>
-
-    <div class="game-menu">
-        <button class="game-button" onclick="startGame()">Начать игру</button>
-        <button class="game-button" onclick="pauseGame()">Пауза</button>
-        <button class="game-button" onclick="resetGame()">Начать заново 🔃</button>
-        <button class="game-button" onclick="undoMove()">Отменить ход</button>
-        <div class="shop-button" onclick="openShop()">Магазин 🛍️</div>
+    <h1>Match-3 Game</h1>
+    <div>
+        <button onclick="startGame()">Начать игру</button>
+        <button onclick="pauseGame()">Пауза</button>
+        <button onclick="resetGame()">Заново</button>
+        <button onclick="undoMove()">Отменить ход</button>
+        <button onclick="openShop()">Магазин 🛍️</button>
+        <button onclick="openInventory()">Инвентарь</button>
+        <button onclick="openStats()">Статистика</button>
+        <button onclick="closeShop()">Скрыть магазин</button>
+        <span id="moves">Ходов: 20</span>
+        <span id="coins">Монеты: 0</span>
     </div>
-
-    <div class="level-select">
-        <h2>Выбор уровня</h2>
-        <div id="levels">
-            <div class="level-button" onclick="selectLevel(1)">Уровень 1 🌟🌟🌟</div>
-            <div class="level-button locked" onclick="selectLevel(2)">Уровень 2 (Заблокирован)</div>
-            <!-- Добавьте больше кнопок уровней здесь -->
-        </div>
+    <div id="task-list"></div>
+    <div class="game-board"></div>
+    <div class="shop">
+        <h2>Магазин</h2>
+        <button onclick="buyBomb()">Купить бомбу (40 монет)</button>
+        <button onclick="buyMove()">Добавить ход (1 монета)</button>
     </div>
-
-    <div class="shop" style="display: none;">
-        <h2>Магазин 🛍️</h2>
-        <div>
-            <p>Монеты: 🌕 <span id="coins">0</span></p>
-            <button class="game-button" onclick="buyBomb()">Купить бомбу 💣 (40 монет)</button>
-            <button class="game-button" onclick="buyMove()">Купить ход (1 монета)</button>
-        </div>
+    <div class="inventory">
+        <h2>Инвентарь</h2>
+        <p id="inventory-content"></p>
     </div>
-
-    <div class="game-board">
-        <!-- Игровое поле 8x8, заполните ячейками -->
-        <div class="cell">🍓</div>
-        <div class="cell">🍒</div>
-        <div class="cell">💦</div>
-        <div class="cell">🔥</div>
-        <!-- Продолжайте заполнение игрового поля -->
-    </div>
-
-    <div class="game-controls">
-        <p>Осталось шагов: <span id="moves">0</span></p>
-        <div id="task-list" class="task-list">
-            <p class="task-item">Задача 1: Собрать 3 🍓</p>
-            <!-- Дополнительные задачи будут добавляться динамически -->
-        </div>
+    <div class="stats">
+        <h2>Статистика</h2>
+        <p id="stats-content"></p>
     </div>
 
     <script>
         let moves = 20;
         let coins = 0;
         let currentLevel = 1;
-        let tasks = [{emoji: "🍓", count: 3}];  // Список задач для текущего уровня
+        let tasks = [{ emoji: "🍓", count: 3 }]; // Список задач для текущего уровня
+        let selectedCell = null; // Переменная для хранения выбранной ячейки
+        let inventory = []; // Инвентарь для хранения купленных бомб
+        let playerStats = {}; // Статистика игрока (ключи — id игроков, значения — уровень)
 
         function startGame() {
             alert('Игра началась!');
             generateBoard();
+            updateMoves();
         }
 
         function pauseGame() {
@@ -166,6 +86,7 @@
         function resetGame() {
             alert('Игра перезапущена!');
             generateBoard();
+            updateMoves();
         }
 
         function undoMove() {
@@ -176,6 +97,31 @@
             document.querySelector('.shop').style.display = 'block';
         }
 
+        function closeShop() {
+            document.querySelector('.shop').style.display = 'none';
+        }
+
+        function openInventory() {
+            document.getElementById('inventory-content').textContent = inventory.join(', ');
+            document.querySelector('.inventory').style.display = 'block';
+        }
+
+        function closeInventory() {
+            document.querySelector('.inventory').style.display = 'none';
+        }
+
+        function openStats() {
+            let statsString = Object.keys(playerStats)
+                .map(player => `Игрок ${player}: Уровень ${playerStats[player]}`)
+                .join('\n');
+            document.getElementById('stats-content').textContent = statsString;
+            document.querySelector('.stats').style.display = 'block';
+        }
+
+        function closeStats() {
+            document.querySelector('.stats').style.display = 'none';
+        }
+
         function selectLevel(level) {
             if (level > currentLevel) {
                 alert('Этот уровень пока заблокирован.');
@@ -183,7 +129,6 @@
             }
             currentLevel = level;
             alert(`Вы выбрали уровень ${level}`);
-            // Логика загрузки уровня
             loadLevel(level);
         }
 
@@ -192,16 +137,16 @@
             tasks = generateTasksForLevel(level);  // Генерация задач
             updateTaskList();
             generateBoard();  // Генерация игрового поля
+            updateMoves();
         }
 
         function generateTasksForLevel(level) {
             let taskList = [];
             if (level >= 5) {
-                // С 5 уровня добавляются несколько задач
-                taskList.push({emoji: "🍓", count: 5});
-                taskList.push({emoji: "🍒", count: 4});
+                taskList.push({ emoji: "🍓", count: 5 });
+                taskList.push({ emoji: "🍒", count: 4 });
             } else {
-                taskList.push({emoji: "🍓", count: 3 + level});
+                taskList.push({ emoji: "🍓", count: 3 + level });
             }
             return taskList;
         }
@@ -221,6 +166,7 @@
                 let cell = document.createElement('div');
                 cell.className = 'cell';
                 cell.textContent = getRandomEmoji();  // Генерация случайного объекта
+                cell.addEventListener('click', () => selectCell(cell, i));  // Добавляем обработчик события для клика
                 board.appendChild(cell);
             }
         }
@@ -230,10 +176,96 @@
             return emojis[Math.floor(Math.random() * emojis.length)];
         }
 
+        function selectCell(cell, index) {
+            if (selectedCell === null) {
+                selectedCell = { element: cell, index: index };
+                cell.style.border = '2px solid red';  // Выделяем выбранную ячейку
+            } else {
+                // Проверяем, можно ли поменять местами с выбранной ячейкой
+                if (isAdjacent(selectedCell.index, index)) {
+                    swapCells(selectedCell.element, cell);  // Меняем местами ячейки
+                    moves--;
+                    updateMoves();
+                    checkMatches();  // Проверяем на совпадения после каждого хода
+                }
+                selectedCell.element.style.border = '1px solid #ccc';  // Убираем выделение
+                selectedCell = null;  // Сбрасываем выбранную ячейку
+            }
+        }
+
+        function isAdjacent(index1, index2) {
+            const row1 = Math.floor(index1 / 8);
+            const col1 = index1 % 8;
+            const row2 = Math.floor(index2 / 8);
+            const col2 = index2 % 8;
+            return (Math.abs(row1 - row2) + Math.abs(col1 - col2)) === 1;
+        }
+
+        function swapCells(cell1, cell2) {
+            const temp = cell1.textContent;
+            cell1.textContent = cell2.textContent;
+            cell2.textContent = temp;
+        }
+
+        function checkMatches() {
+            let board = document.querySelectorAll('.cell');
+            let matchedCells = [];
+
+            // Проверка горизонтальных и вертикальных совпадений
+            for (let i = 0; i < 64; i++) {
+                const row = Math.floor(i / 8);
+                const col = i % 8;
+
+                // Проверка горизонтальных совпадений
+                if (col <= 4 && board[i].textContent === board[i + 1].textContent && 
+                    board[i].textContent === board[i + 2].textContent && board[i].textContent === board[i + 3].textContent) {
+                    createBomb(i + 1);
+                    matchedCells.push(i, i + 1, i + 2, i + 3);  // Горизонтальное совпадение
+                }
+                // Проверка вертикальных совпадений
+                if (row <= 4 && board[i].textContent === board[i + 8].textContent && 
+                    board[i].textContent === board[i + 16].textContent && board[i].textContent === board[i + 24].textContent) {
+                    createBomb(i + 8);
+                    matchedCells.push(i, i + 8, i + 16, i + 24);  // Вертикальное совпадение
+                }
+            }
+
+            if (matchedCells.length > 0) {
+                matchedCells.forEach(index => {
+                    board[index].textContent = getRandomEmoji();  // Заменяем совпавшие элементы новыми
+                });
+                // После обновления поля проверяем задачи
+                checkTasks();
+            }
+        }
+
+        function createBomb(index) {
+            let board = document.querySelectorAll('.cell');
+            board[index].textContent = "💣";  // Устанавливаем бомбу на место совпадения
+        }
+
+        function checkTasks() {
+            tasks.forEach(task => {
+                let count = 0;
+                document.querySelectorAll('.cell').forEach(cell => {
+                    if (cell.textContent === task.emoji) {
+                        count++;
+                    }
+                });
+                task.count -= count;
+                if (task.count <= 0) {
+                    alert('Задача выполнена!');
+                }
+            });
+            updateTaskList();
+        }
+
         function buyBomb() {
             if (coins >= 40) {
                 coins -= 40;
-                alert('Бомба куплена!');
+                inventory.push('💣');  // Добавляем бомбу в инвентарь
+                alert('Бомба куплена и добавлена в инвентарь!');
+                updateInventory();
             } else {
                 alert('Недостаточно монет.');
             }
@@ -251,25 +283,16 @@
         }
 
         function updateCoins() {
-            document.getElementById("coins").textContent = coins;
+            document.getElementById("coins").textContent = `Монеты: ${coins}`;
         }
 
         function updateMoves() {
-            document.getElementById("moves").textContent = moves;
+            document.getElementById("moves").textContent = `Ходов: ${moves}`;
         }
 
-        function checkMatch() {
-            // Логика проверки совпадений и удаления 3 в ряд
-        }
-
-        function bombExplosion() {
-            // Логика взрыва бомбы и подсчета результатов
-        }
-
-        function generateLevel(level) {
-            // Генерация уровней в зависимости от номера
+        function updateInventory() {
+            document.getElementById('inventory-content').textContent = inventory.join(', ');
         }
     </script>
-
 </body>
 </html>
