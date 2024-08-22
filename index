@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Три в ряд</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, 50px);
+            grid-gap: 5px;
+        }
+        .cell {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="board" id="board">
+        <!-- Клетки игрового поля будут генерироваться с помощью JavaScript -->
+    </div>
+
+    <script>
+        const objects = ['⭐', '✨', '💦', '🔥', '🎉', '❤️', '🧡', '💛'];
+
+        function generateBoard(size) {
+            const board = [];
+            for (let i = 0; i < size; i++) {
+                const row = [];
+                for (let j = 0; j < size; j++) {
+                    row.push(objects[Math.floor(Math.random() * objects.length)]);
+                }
+                board.push(row);
+            }
+            return board;
+        }
+
+        function renderBoard(board) {
+            const boardElement = document.getElementById('board');
+            boardElement.innerHTML = '';
+            board.forEach((row, i) => {
+                row.forEach((cell, j) => {
+                    const cellElement = document.createElement('div');
+                    cellElement.classList.add('cell');
+                    cellElement.textContent = cell;
+                    cellElement.addEventListener('click', () => handleCellClick(i, j));
+                    boardElement.appendChild(cellElement);
+                });
+            });
+        }
+
+        function handleCellClick(x, y) {
+            alert(Вы нажали на клетку (${x}, ${y}));
+            // Реализуйте логику перемещения объектов здесь
+        }
+
+        // Генерируем и отображаем игровое поле
+        const board = generateBoard(8);
+        renderBoard(board);
+    </script>
+</body>
+</html>
