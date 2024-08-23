@@ -57,6 +57,10 @@
             margin-bottom: 10px;
             font-size: 18px;
         }
+
+        .selected {
+            border: 2px solid #000;
+        }
     </style>
 </head>
 <body>
@@ -82,9 +86,9 @@
             const explosionEmoji = '💥';
             let currentLevel = 1;
             let board = [];
+            let selectedCell = null;
             let task = {};
             let movesLeft = 30;
-            let score = 0;
             let previousBoard = [];
 
             // Получение элементов
@@ -152,30 +156,59 @@
                 const row = parseInt(event.target.dataset.row);
                 const col = parseInt(event.target.dataset.col);
 
-                if (isValidMove(row, col)) {
-                    makeMove(row, col);
-                    checkMatches();
-                    updateBoard();
-                    movesLeft--;
-                    movesLeftDisplay.textContent = movesLeft;
-                    if (movesLeft <= 0) {
-                        alert('Вы проиграли! Попробуйте заново.');
-                        restartLevel();
+                if (selectedCell) {
+                    const prevRow = selectedCell.dataset.row;
+                    const prevCol = selectedCell.dataset.col;
+
+                    if (isAdjacent(prevRow, prevCol, row, col)) {
+                        makeMove(prevRow, prevCol, row, col);
+                        checkMatches();
+                        updateBoard();
+                        movesLeft--;
+                        movesLeftDisplay.textContent = movesLeft;
+                        if (movesLeft <= 0) {
+                            alert('Вы проиграли! Попробуйте заново.');
+                            restartLevel();
+                        }
                     }
+
+                    selectedCell.classList.remove('selected');
+                    selectedCell = null;
+                } else {
+                    selectedCell = event.target;
+                    selectedCell.classList.add('selected');
                 }
             }
 
-            // Проверка допустимости хода
-            function isValidMove(row, col) {
-                // Логика проверки возможности перемещения объекта
-                return true; // Для примера всегда возвращает true
+            // Проверка, являются ли ячейки соседними
+            function isAdjacent(row1, col1, row2, col2) {
+                return (Math.abs(row1 - row2) === 1 && col1 === col2) ||
+                       (Math.abs(col1 - col2) === 1 && row1 === row2);
             }
 
             // Выполнение хода
-            function makeMove(row, col) {
+            function makeMove(fromRow, fromCol, toRow, toCol) {
                 previousBoard = JSON.parse(JSON.stringify(board)); // Сохраняем состояние для отмены хода
 
-                // Логика выполнения хода
+                // Перемещение объекта
+                const temp = board[fromRow][fromCol];
+                board[fromRow][fromCol] = board[toRow][toCol];
+                board[toRow][toCol] = temp;
+
+                // Удаление совпадений и обновление доски
+                checkMatches();
+                renderBoard();
+            }
+
+            // Проверка совпадений (3 и более одинаковых)
+            function checkMatches() {
+                // Логика поиска совпадений на доске
+                // Временно для примера: нет логики проверки совпадений
+            }
+
+            // Обновление доски
+            function updateBoard() {
+                renderBoard();
             }
 
             // Отмена последнего хода
@@ -196,16 +229,6 @@
                     amount: 10 + currentLevel
                 };
                 taskDisplay.textContent = `Соберите ${task.amount} ${task.target}`;
-            }
-
-            // Проверка совпадений (3 и более одинаковых)
-            function checkMatches() {
-                // Логика поиска совпадений на доске
-            }
-
-            // Обновление доски
-            function updateBoard() {
-                renderBoard();
             }
 
             // Перезагрузка уровня
