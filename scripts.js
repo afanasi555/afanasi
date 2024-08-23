@@ -1,4 +1,4 @@
-const emojis = ['⭐', '✨', '💦', '🔥', '🎉', '❤️', '🧡', '💛', '💚', '🩵', '💙', '💜', '🤎', '🖤', '🩶'];
+const emojis = ['⭐', '✨', '💦', '🔥', '🎉', '❤️', '🧡', '💛', '💚', '🩵', '💙', '💜', '🤎', '🖤', '🩶', '💅', '🌹', '🌸', '🌱', '🌳', '🍀', '🌲', '⛄', '☃️', '🌝', '🌚', '🌕', '🐱', '🐯', '🦁', '🦄', '🐸', '🐘', '🐣', '🐟', '🐠', '🐡', '🪼', '🐞', '🐝', '🍓', '🍒', '🍎', '🍉', '🍌', '🍍', '🍇', '🍔', '🥨', '🍟', '🍕', '🥗', '🍭', '🍬', '🍫', '🍪', '🍯', '🥤', '🎀', '🎁', '🎈', '🎊', '🎉', '🧨', '⚽', '🏀', '🧶', '📀', '💿', '💸', '👠', '⚜️', '🔱', '☢️', '☣️'];
 const bombEmoji = '💣';
 const explosionEmoji = '💥';
 
@@ -7,8 +7,11 @@ let board = [];
 let task = {};
 let movesLeft = 30;
 let score = 0;
+let previousBoard = [];
 
 document.getElementById('startGame').addEventListener('click', startGame);
+document.getElementById('restartButton').addEventListener('click', restartLevel);
+document.getElementById('undoButton').addEventListener('click', undoMove);
 
 function startGame() {
     document.getElementById('menu').style.display = 'none';
@@ -20,10 +23,13 @@ function loadLevel(level) {
     generateBoard();
     updateTask();
     renderBoard();
+    document.getElementById('currentLevel').textContent = level;
+    document.getElementById('movesLeft').textContent = movesLeft;
 }
 
 function generateBoard() {
     board = Array(8).fill(null).map(() => Array(8).fill(null).map(() => generateEmoji()));
+    previousBoard = JSON.parse(JSON.stringify(board)); // Сохраняем состояние для отмены хода
 }
 
 function generateEmoji() {
@@ -50,17 +56,45 @@ function handleCellClick(event) {
     const row = parseInt(event.target.dataset.row);
     const col = parseInt(event.target.dataset.col);
 
-    // Implement logic to move and match emojis, create bombs, etc.
-    // For example:
-    // if (isValidMove(row, col)) {
-    //     makeMove(row, col);
-    //     checkMatches();
-    //     updateBoard();
-    // }
+    if (isValidMove(row, col)) {
+        makeMove(row, col);
+        checkMatches();
+        updateBoard();
+        movesLeft--;
+        document.getElementById('movesLeft').textContent = movesLeft;
+        if (movesLeft <= 0) {
+            alert('Вы проиграли! Попробуйте заново.');
+            restartLevel();
+        }
+    }
+}
+
+function isValidMove(row, col) {
+    // Проверяем, можно ли сделать ход (например, если рядом есть аналогичные объекты)
+    // Пример проверки:
+    return true; // Простая проверка для примера
+}
+
+function makeMove(row, col) {
+    previousBoard = JSON.parse(JSON.stringify(board)); // Сохраняем состояние для отмены хода
+
+    // Логика перемещения объекта (например, меняем местами с соседним объектом)
+    // Пример:
+    // let temp = board[row][col];
+    // board[row][col] = board[row][col + 1];
+    // board[row][col + 1] = temp;
+}
+
+function undoMove() {
+    if (previousBoard.length) {
+        board = JSON.parse(JSON.stringify(previousBoard));
+        renderBoard();
+        movesLeft++;
+        document.getElementById('movesLeft').textContent = movesLeft;
+    }
 }
 
 function updateTask() {
-    // Generate a task for the level
     task = {
         type: 'collect',
         target: emojis[Math.floor(Math.random() * emojis.length)],
@@ -70,17 +104,20 @@ function updateTask() {
 }
 
 function checkMatches() {
-    // Implement logic to check for matches (3 or more in a row/column)
-    // If a match is found, remove the emojis, update the task, and generate new emojis.
-}
-
-function makeMove(row, col) {
-    // Implement logic to handle emoji movement
-    // Check if the move creates a match and if a bomb is involved
+    // Логика проверки наличия трёх и более одинаковых объектов
+    for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+            if (board[row][col] === task.target) {
+                // Проверяем, есть ли 3 и более одинаковых подряд
+                // Если да, удаляем их и обновляем задание
+            }
+        }
+    }
 }
 
 function updateBoard() {
-    // Implement logic to update the board after moves and matches
+    // Логика обновления доски после выполнения действий
+    renderBoard();
 }
 
 function createBomb(row, col) {
@@ -88,7 +125,18 @@ function createBomb(row, col) {
 }
 
 function explodeBomb(row, col) {
-    // Implement logic to handle bomb explosion and update the board accordingly
+    // Логика взрыва бомбы (например, удаление объектов в зоне 4х4)
+    for (let r = row - 2; r <= row + 2; r++) {
+        for (let c = col - 2; c <= col + 2; c++) {
+            if (r >= 0 && r < 8 && c >= 0 && c < 8 && board[r][c] !== bombEmoji) {
+                board[r][c] = generateEmoji(); // Заменяем на новый случайный объект
+            }
+        }
+    }
+    renderBoard();
 }
 
-// Additional game logic functions can be added here
+function restartLevel() {
+    movesLeft = 30;
+    loadLevel(currentLevel);
+}
