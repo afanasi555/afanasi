@@ -3,38 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Афанасьев заигрыш</title>
+    <title>Match 3 Game</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Афанасьев заигрыш</h1>
-        </div>
-        <div class="status-bar">
-            <div class="coins">Количество монет: <span id="coins">0</span></div>
-        </div>
-        <div class="menu">
-            <button onclick="startGame()">Начать игру</button>
-            <button onclick="showLevels()">Уровни</button>
-            <button onclick="showInventory()">Инвентарь</button>
-            <button onclick="restartGame()">Начать заново</button>
-            <button onclick="resetGame()">Сбросить</button>
-            <button onclick="showStore()">Магазин</button>
-        </div>
-        <div class="main-content">
-            <div class="game-field">
-                <p>Игровое поле</p>
-            </div>
-            <div class="sidebar">
-                <div class="moves">Количество ходов: <span id="moves">0</span></div>
-                <div class="tasks">
-                    <p>Задачи</p>
-                </div>
-            </div>
+    <div id="menu">
+        <button id="startGame">Начать игру</button>
+        <button id="shopButton">🛍️ Магазин</button>
+    </div>
+    <div id="game">
+        <div id="levelDisplay">Уровень: <span id="currentLevel">1</span></div>
+        <div id="taskDisplay">Задание: <span id="task"></span></div>
+        <div id="movesLeftDisplay">Осталось ходов: <span id="movesLeft"></span></div>
+        <div id="board"></div>
+        <div id="controls">
+            <button id="restartButton">🔃 Заново</button>
+            <button id="pauseButton">Пауза</button>
+            <button id="undoButton">Отменить ход</button>
         </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
