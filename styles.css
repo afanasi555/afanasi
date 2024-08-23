@@ -1,4 +1,88 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
 body {
     background: url('background-image.jpg.jpg') no-repeat center center fixed;
     background-size: cover;
+    font-family: Arial, sans-serif;
+    color: white;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    text-align: center;
+}
+
+.header h1 {
+    background-color: #5DA2A6;
+    color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-size: 36px;
+}
+
+.menu button {
+    background-color: #4A90E2;
+    border: none;
+    color: white;
+    padding: 15px 30px;
+    margin: 5px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.menu button:hover {
+    background-color: #357ABD;
+}
+
+.status-bar {
+    margin: 20px 0;
+}
+
+.coins {
+    font-size: 18px;
+    color: white;
+}
+
+.main-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-top: 20px;
+}
+
+.game-field {
+    background-color: #3F8896;
+    width: 60%;
+    height: 400px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+}
+
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 400px;
+}
+
+.moves, .tasks {
+    background-color: #328392;
+    padding: 20px;
+    border-radius: 10px;
+    font-size: 18px;
+    margin-bottom: 20px;
+    width: 200px;
+    text-align: center;
 }
