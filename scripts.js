@@ -1,142 +1,140 @@
-const emojis = ['⭐', '✨', '💦', '🔥', '🎉', '❤️', '🧡', '💛', '💚', '🩵', '💙', '💜', '🤎', '🖤', '🩶', '💅', '🌹', '🌸', '🌱', '🌳', '🍀', '🌲', '⛄', '☃️', '🌝', '🌚', '🌕', '🐱', '🐯', '🦁', '🦄', '🐸', '🐘', '🐣', '🐟', '🐠', '🐡', '🪼', '🐞', '🐝', '🍓', '🍒', '🍎', '🍉', '🍌', '🍍', '🍇', '🍔', '🥨', '🍟', '🍕', '🥗', '🍭', '🍬', '🍫', '🍪', '🍯', '🥤', '🎀', '🎁', '🎈', '🎊', '🎉', '🧨', '⚽', '🏀', '🧶', '📀', '💿', '💸', '👠', '⚜️', '🔱', '☢️', '☣️'];
-const bombEmoji = '💣';
-const explosionEmoji = '💥';
+document.addEventListener('DOMContentLoaded', function() {
+    // Переменные
+    const emojis = ['⭐', '✨', '💦', '🔥', '🎉', '❤️', '🧡', '💛', '💚', '🩵', '💙', '💜', '🤎', '🖤', '🩶', '💅', '🌹', '🌸', '🌱', '🌳', '🍀', '🌲', '⛄', '☃️', '🌝', '🌚', '🌕', '🐱', '🐯', '🦁', '🦄', '🐸', '🐘', '🐣', '🐟', '🐠', '🐡', '🪼', '🐞', '🐝', '🍓', '🍒', '🍎', '🍉', '🍌', '🍍', '🍇', '🍔', '🥨', '🍟', '🍕', '🥗', '🍭', '🍬', '🍫', '🍪', '🍯', '🥤', '🎀', '🎁', '🎈', '🎊', '🎉', '🧨', '⚽', '🏀', '🧶', '📀', '💿', '💸', '👠', '⚜️', '🔱', '☢️', '☣️'];
+    const bombEmoji = '💣';
+    const explosionEmoji = '💥';
+    let currentLevel = 1;
+    let board = [];
+    let task = {};
+    let movesLeft = 30;
+    let score = 0;
+    let previousBoard = [];
 
-let currentLevel = 1;
-let board = [];
-let task = {};
-let movesLeft = 30;
-let score = 0;
-let previousBoard = [];
+    // Получение элементов
+    const startGameButton = document.getElementById('startGame');
+    const restartButton = document.getElementById('restartButton');
+    const undoButton = document.getElementById('undoButton');
+    const shopButton = document.getElementById('shopButton');
 
-document.getElementById('startGame').addEventListener('click', startGame);
-document.getElementById('restartButton').addEventListener('click', restartLevel);
-document.getElementById('undoButton').addEventListener('click', undoMove);
-
-function startGame() {
-    document.getElementById('menu').style.display = 'none';
-    document.getElementById('game').style.display = 'flex';
-    loadLevel(currentLevel);
-}
-
-function loadLevel(level) {
-    generateBoard();
-    updateTask();
-    renderBoard();
-    document.getElementById('currentLevel').textContent = level;
-    document.getElementById('movesLeft').textContent = movesLeft;
-}
-
-function generateBoard() {
-    board = Array(8).fill(null).map(() => Array(8).fill(null).map(() => generateEmoji()));
-    previousBoard = JSON.parse(JSON.stringify(board)); // Сохраняем состояние для отмены хода
-}
-
-function generateEmoji() {
-    return emojis[Math.floor(Math.random() * emojis.length)];
-}
-
-function renderBoard() {
+    const gameContainer = document.getElementById('game');
+    const menuContainer = document.getElementById('menu');
     const boardElement = document.getElementById('board');
-    boardElement.innerHTML = '';
-    for (let row = 0; row < 8; row++) {
-        for (let col = 0; col < 8; col++) {
-            const cell = document.createElement('div');
-            cell.classList.add('cell');
-            cell.dataset.row = row;
-            cell.dataset.col = col;
-            cell.textContent = board[row][col];
-            cell.addEventListener('click', handleCellClick);
-            boardElement.appendChild(cell);
-        }
+    const taskDisplay = document.getElementById('task');
+    const levelDisplay = document.getElementById('currentLevel');
+    const movesLeftDisplay = document.getElementById('movesLeft');
+
+    // Инициализация событий
+    startGameButton.addEventListener('click', startGame);
+    restartButton.addEventListener('click', restartLevel);
+    undoButton.addEventListener('click', undoMove);
+
+    // Функция запуска игры
+    function startGame() {
+        menuContainer.style.display = 'none';
+        gameContainer.style.display = 'flex';
+        loadLevel(currentLevel);
     }
-}
 
-function handleCellClick(event) {
-    const row = parseInt(event.target.dataset.row);
-    const col = parseInt(event.target.dataset.col);
-
-    if (isValidMove(row, col)) {
-        makeMove(row, col);
-        checkMatches();
-        updateBoard();
-        movesLeft--;
-        document.getElementById('movesLeft').textContent = movesLeft;
-        if (movesLeft <= 0) {
-            alert('Вы проиграли! Попробуйте заново.');
-            restartLevel();
-        }
-    }
-}
-
-function isValidMove(row, col) {
-    // Проверяем, можно ли сделать ход (например, если рядом есть аналогичные объекты)
-    // Пример проверки:
-    return true; // Простая проверка для примера
-}
-
-function makeMove(row, col) {
-    previousBoard = JSON.parse(JSON.stringify(board)); // Сохраняем состояние для отмены хода
-
-    // Логика перемещения объекта (например, меняем местами с соседним объектом)
-    // Пример:
-    // let temp = board[row][col];
-    // board[row][col] = board[row][col + 1];
-    // board[row][col + 1] = temp;
-}
-
-function undoMove() {
-    if (previousBoard.length) {
-        board = JSON.parse(JSON.stringify(previousBoard));
+    // Загрузка уровня
+    function loadLevel(level) {
+        generateBoard();
+        updateTask();
         renderBoard();
-        movesLeft++;
-        document.getElementById('movesLeft').textContent = movesLeft;
+        levelDisplay.textContent = level;
+        movesLeftDisplay.textContent = movesLeft;
     }
-}
 
-function updateTask() {
-    task = {
-        type: 'collect',
-        target: emojis[Math.floor(Math.random() * emojis.length)],
-        amount: 10 + currentLevel
-    };
-    document.getElementById('task').textContent = `Соберите ${task.amount} ${task.target}`;
-}
+    // Генерация доски
+    function generateBoard() {
+        board = Array(8).fill(null).map(() => Array(8).fill(null).map(() => generateEmoji()));
+        previousBoard = JSON.parse(JSON.stringify(board)); // Сохраняем состояние для отмены хода
+    }
 
-function checkMatches() {
-    // Логика проверки наличия трёх и более одинаковых объектов
-    for (let row = 0; row < 8; row++) {
-        for (let col = 0; col < 8; col++) {
-            if (board[row][col] === task.target) {
-                // Проверяем, есть ли 3 и более одинаковых подряд
-                // Если да, удаляем их и обновляем задание
+    // Генерация случайного смайлика
+    function generateEmoji() {
+        return emojis[Math.floor(Math.random() * emojis.length)];
+    }
+
+    // Отображение доски
+    function renderBoard() {
+        boardElement.innerHTML = '';
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.dataset.row = row;
+                cell.dataset.col = col;
+                cell.textContent = board[row][col];
+                cell.addEventListener('click', handleCellClick);
+                boardElement.appendChild(cell);
             }
         }
     }
-}
 
-function updateBoard() {
-    // Логика обновления доски после выполнения действий
-    renderBoard();
-}
+    // Обработка клика по ячейке
+    function handleCellClick(event) {
+        const row = parseInt(event.target.dataset.row);
+        const col = parseInt(event.target.dataset.col);
 
-function createBomb(row, col) {
-    board[row][col] = bombEmoji;
-}
-
-function explodeBomb(row, col) {
-    // Логика взрыва бомбы (например, удаление объектов в зоне 4х4)
-    for (let r = row - 2; r <= row + 2; r++) {
-        for (let c = col - 2; c <= col + 2; c++) {
-            if (r >= 0 && r < 8 && c >= 0 && c < 8 && board[r][c] !== bombEmoji) {
-                board[r][c] = generateEmoji(); // Заменяем на новый случайный объект
+        if (isValidMove(row, col)) {
+            makeMove(row, col);
+            checkMatches();
+            updateBoard();
+            movesLeft--;
+            movesLeftDisplay.textContent = movesLeft;
+            if (movesLeft <= 0) {
+                alert('Вы проиграли! Попробуйте заново.');
+                restartLevel();
             }
         }
     }
-    renderBoard();
-}
 
-function restartLevel() {
-    movesLeft = 30;
-    loadLevel(currentLevel);
-}
+    // Проверка допустимости хода
+    function isValidMove(row, col) {
+        // Логика проверки возможности перемещения объекта
+        return true; // Для примера всегда возвращает true
+    }
+
+    // Выполнение хода
+    function makeMove(row, col) {
+        previousBoard = JSON.parse(JSON.stringify(board)); // Сохраняем состояние для отмены хода
+
+        // Логика выполнения хода
+    }
+
+    // Отмена последнего хода
+    function undoMove() {
+        if (previousBoard.length) {
+            board = JSON.parse(JSON.stringify(previousBoard));
+            renderBoard();
+            movesLeft++;
+            movesLeftDisplay.textContent = movesLeft;
+        }
+    }
+
+    // Обновление задания
+    function updateTask() {
+        task = {
+            type: 'collect',
+            target: emojis[Math.floor(Math.random() * emojis.length)],
+            amount: 10 + currentLevel
+        };
+        taskDisplay.textContent = `Соберите ${task.amount} ${task.target}`;
+    }
+
+    // Проверка совпадений (3 и более одинаковых)
+    function checkMatches() {
+        // Логика поиска совпадений на доске
+    }
+
+    // Обновление доски
+    function updateBoard() {
+        renderBoard();
+    }
+
+    // Перезагрузка уровня
+    function restartLevel() {
+        movesLeft = 30;
+        loadLevel(currentLevel);
+    }
+});
