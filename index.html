@@ -42,6 +42,10 @@
             cursor: pointer;
         }
 
+        .selected {
+            border: 2px solid #000;
+        }
+
         #controls {
             display: flex;
             gap: 10px;
@@ -56,10 +60,6 @@
         #taskDisplay, #levelDisplay, #movesLeftDisplay {
             margin-bottom: 10px;
             font-size: 18px;
-        }
-
-        .selected {
-            border: 2px solid #000;
         }
     </style>
 </head>
@@ -157,13 +157,12 @@
                 const col = parseInt(event.target.dataset.col);
 
                 if (selectedCell) {
-                    const prevRow = selectedCell.dataset.row;
-                    const prevCol = selectedCell.dataset.col;
+                    const prevRow = parseInt(selectedCell.dataset.row);
+                    const prevCol = parseInt(selectedCell.dataset.col);
 
                     if (isAdjacent(prevRow, prevCol, row, col)) {
                         makeMove(prevRow, prevCol, row, col);
                         checkMatches();
-                        updateBoard();
                         movesLeft--;
                         movesLeftDisplay.textContent = movesLeft;
                         if (movesLeft <= 0) {
@@ -195,20 +194,74 @@
                 board[fromRow][fromCol] = board[toRow][toCol];
                 board[toRow][toCol] = temp;
 
-                // Удаление совпадений и обновление доски
-                checkMatches();
+                // После перемещения обновляем доску
                 renderBoard();
             }
 
             // Проверка совпадений (3 и более одинаковых)
             function checkMatches() {
-                // Логика поиска совпадений на доске
-                // Временно для примера: нет логики проверки совпадений
+                let matched = false;
+                const toRemove = [];
+
+                // Проверка горизонтальных совпадений
+                for (let row = 0; row < 8; row++) {
+                    for (let col = 0; col < 6; col++) {
+                        const cell = board[row][col];
+                        if (cell && cell === board[row][col + 1] && cell === board[row][col + 2]) {
+                            toRemove.push({row, col});
+                            toRemove.push({row, col: col + 1});
+                            toRemove.push({row, col: col + 2});
+                            matched = true;
+                        }
+                    }
+                }
+
+                // Проверка вертикальных совпадений
+                for (let col = 0; col < 8; col++) {
+                    for (let row = 0; row < 6; row++) {
+                        const cell = board[row][col];
+                        if (cell && cell === board[row + 1][col] && cell === board[row + 2][col]) {
+                            toRemove.push({row, col});
+                            toRemove.push({row: row + 1, col});
+                            toRemove.push({row: row + 2, col});
+                            matched = true;
+                        }
+                    }
+                }
+
+                if (matched) {
+                    // Удаление совпадающих объектов
+                    toRemove.forEach(({row, col}) => {
+                        board[row][col] = null;
+                    });
+
+                    // Заполнение пустых мест
+                    fillBoard();
+                    // Проверка совпадений после обновления
+                    checkMatches();
+                }
             }
 
-            // Обновление доски
-            function updateBoard() {
-                renderBoard();
+            // Заполнение пустых мест новыми объектами
+            function fillBoard() {
+                for (let col = 0; col < 8; col++) {
+                    let emptySpaces = [];
+                    for (let row = 7; row >= 0; row--) {
+                        if (board[row][col] === null) {
+                            emptySpaces.push(row);
+                        } else if (emptySpaces.length > 0) {
+                            const emptyRow = emptySpaces.pop();
+                            board[emptyRow][col] = board[row][col];
+                            board[row][col] = null;
+                            emptySpaces.push(row);
+                        }
+                    }
+
+                    // Заполнение новых объектов
+                    emptySpaces.forEach(row => {
+                        board[row][col] = generateEmoji();
+                    });
+                }
             }
 
             // Отмена последнего хода
